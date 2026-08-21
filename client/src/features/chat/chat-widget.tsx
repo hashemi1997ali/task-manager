@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  ArrowUpRight,
   Bot,
   CircleStop,
   Headset,
@@ -9,16 +10,19 @@ import {
   MessageCircle,
   Plus,
   Send,
+  ShieldCheck,
   Star,
+  TicketCheck,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Input, Textarea } from "@/components/ui/form-controls";
+import { Textarea } from "@/components/ui/form-controls";
 import { avatarFrameClassName } from "@/components/user-avatar";
 import { useAuth } from "@/features/auth/auth-provider";
 import {
@@ -39,6 +43,12 @@ import {
 import { ChatMessageBubble } from "@/features/chat/chat-message-bubble";
 import { ChatIconButton } from "@/features/chat/chat-icon-button";
 import { DateGroupedMessageList } from "@/features/chat/date-grouped-message-list";
+import {
+  ASSISTANT_SUPPORT_EVENT,
+  TICKET_SUPPORT_EVENT,
+  type AssistantSupportRequest,
+  type TicketSupportRequest,
+} from "@/features/chat/ticket-support-event";
 import { getErrorMessage } from "@/lib/api-error";
 import {
   getAssistantAgentLabel,
@@ -60,10 +70,11 @@ const copy = {
     history: "Chat history",
     welcome: "Hello! I'm the AI Assistant. How can I help you today?",
     placeholder: "Write a message…",
-    staffPlaceholder: "Ask a question or use /ban, /unban, /user…",
+    staffPlaceholder: "Ask Karino Desk a question…",
     send: "Send",
     waiting: "Waiting for support",
     active: (name: string) => `${name} is helping you`,
+    secure: "Private support channel",
     ended: "This chat has ended.",
     end: "End chat",
     endTitle: "End this chat?",
@@ -75,11 +86,16 @@ const copy = {
     submitRating: "Submit rating",
     rated: "Thanks for your feedback.",
     escalationDone: "The conversation was sent to support.",
+    supportReady: "A human agent will receive this conversation with its context.",
     endedDone: "The chat was ended.",
     assistant: "AI Assistant",
     openStatus: "Support queue",
     activeStatus: "Human support",
     endedStatus: "Ended",
+    linkedTicket: "Linked ticket",
+    composerHint: "Enter to send · Shift + Enter for a new line",
+    ticketMessage: (ticketNumber: string, title: string) =>
+      `I need live support with ${ticketNumber}: ${title}`,
   },
   de: {
     title: "AI Assistant",
@@ -91,10 +107,11 @@ const copy = {
     history: "Chatverlauf",
     welcome: "Hallo! Ich bin der AI Assistant. Wie kann ich dir heute helfen?",
     placeholder: "Nachricht schreiben…",
-    staffPlaceholder: "Frage stellen oder /ban, /unban, /user verwenden…",
+    staffPlaceholder: "Stelle Karino Desk eine Frage…",
     send: "Senden",
     waiting: "Wartet auf Support",
     active: (name: string) => `${name} hilft dir`,
+    secure: "Privater Support-Kanal",
     ended: "Dieser Chat ist beendet.",
     end: "Chat beenden",
     endTitle: "Diesen Chat beenden?",
@@ -106,11 +123,17 @@ const copy = {
     submitRating: "Bewertung senden",
     rated: "Danke für dein Feedback.",
     escalationDone: "Die Unterhaltung wurde an den Support gesendet.",
+    supportReady:
+      "Ein Support-Agent erhält diese Unterhaltung mit dem vollständigen Kontext.",
     endedDone: "Der Chat wurde beendet.",
     assistant: "AI Assistant",
     openStatus: "Support-Warteschlange",
     activeStatus: "Menschlicher Support",
     endedStatus: "Beendet",
+    linkedTicket: "Verknüpftes Ticket",
+    composerHint: "Enter zum Senden · Umschalt + Enter für eine neue Zeile",
+    ticketMessage: (ticketNumber: string, title: string) =>
+      `Ich brauche Live-Support für ${ticketNumber}: ${title}`,
   },
 } as const;
 
@@ -207,6 +230,15 @@ export function ChatWidget() {
     setGuestChat(chat);
   };
 
+  const invalidateTicketCaches = () => {
+    void Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["tickets"] }),
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin", "tickets"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin", "overview"] }),
+    ]);
+  };
+
   const sendMutation = useMutation<
     | {
         kind: "assistant";
@@ -247,6 +279,7 @@ export function ChatWidget() {
       if (payload.kind === "support") {
         if (payload.chat.origin === "guest") updateGuestChat(payload.chat);
         else updateChatCache(payload.chat);
+        if (payload.chat.ticketId) invalidateTicketCaches();
         return;
       }
       setDraftMessages((current) => [
@@ -263,18 +296,23 @@ export function ChatWidget() {
     },
   });
 
-  const transferMutation = useMutation({
-    mutationFn: async () => {
+  const transferMutation = useMutation<
+    { kind: "guest" | "authenticated"; chat: SupportChat },
+    Error,
+    { ticket?: TicketSupportRequest; history?: ChatHistoryItem[] } | undefined
+  >({
+    mutationFn: async (intent) => {
       const reason = supportOffer?.reason ?? "human_requested";
+      const history = intent?.history ?? transcriptHistory;
       if (status !== "authenticated") {
         return {
           kind: "guest" as const,
-          chat: await createGuestSupportChatRequest(transcriptHistory, locale, reason),
+          chat: await createGuestSupportChatRequest(history, locale, reason),
         };
       }
       return {
         kind: "authenticated" as const,
-        chat: await createSupportChatRequest(transcriptHistory, locale, reason),
+        chat: await createSupportChatRequest(history, locale, reason, intent?.ticket?.id),
       };
     },
     onSuccess: ({ chat, kind }) => {
@@ -282,10 +320,70 @@ export function ChatWidget() {
       else updateChatCache(chat);
       setDraftMessages([]);
       setSupportOffer(null);
+      if (chat.ticketId) invalidateTicketCaches();
       toast.success(t.escalationDone);
     },
     onError: (error) => toast.error(getErrorMessage(error, locale)),
   });
+
+  useEffect(() => {
+    const handleTicketSupport = (event: Event) => {
+      if (status !== "authenticated") return;
+      const ticket = (event as CustomEvent<TicketSupportRequest>).detail;
+      if (!ticket?.id) return;
+      const content = t.ticketMessage(ticket.ticketNumber, ticket.title);
+      const createdAt = new Date().toISOString();
+      const history: ChatHistoryItem[] = [{ role: "user", content }];
+      setOpen(true);
+      setSelectedId(null);
+      setInput("");
+      setSupportOffer(null);
+      setDraftMessages([
+        {
+          id: `ticket-support-${createdAt}`,
+          sender: "user",
+          senderId: null,
+          senderName: null,
+          content,
+          createdAt,
+        },
+      ]);
+      transferMutation.mutate({ ticket, history });
+    };
+    window.addEventListener(TICKET_SUPPORT_EVENT, handleTicketSupport);
+    return () => window.removeEventListener(TICKET_SUPPORT_EVENT, handleTicketSupport);
+  }, [status, t, transferMutation]);
+
+  useEffect(() => {
+    const handleAssistantSupport = (event: Event) => {
+      if (status !== "authenticated") return;
+      const request = (event as CustomEvent<AssistantSupportRequest>).detail;
+      const history = request?.history
+        ?.filter((item) => item.content.trim().length > 0)
+        .slice(-40);
+      if (!request?.conversationId || !history?.length) return;
+
+      const createdAt = new Date().toISOString();
+      setOpen(true);
+      setSelectedId(null);
+      setInput("");
+      setSupportOffer(null);
+      setDraftMessages(
+        history.map((item, index) => ({
+          id: `assistant-handoff-${request.conversationId}-${index}`,
+          sender: item.role === "user" ? "user" : "ai",
+          senderId: null,
+          senderName: item.role === "assistant" ? t.assistant : null,
+          content: item.content,
+          createdAt,
+        })),
+      );
+      transferMutation.mutate({ history });
+    };
+    window.addEventListener(ASSISTANT_SUPPORT_EVENT, handleAssistantSupport);
+    return () =>
+      window.removeEventListener(ASSISTANT_SUPPORT_EVENT, handleAssistantSupport);
+  }, [status, t, transferMutation]);
 
   const endMutation = useMutation({
     mutationFn: async (chat: SupportChat) =>
@@ -311,6 +409,7 @@ export function ChatWidget() {
       setInput("");
       setPendingUserMessage(null);
       setEndIntent(null);
+      if (chat.ticketId) invalidateTicketCaches();
       toast.success(t.endedDone);
     },
     onError: (error) => toast.error(getErrorMessage(error, locale)),
@@ -384,7 +483,7 @@ export function ChatWidget() {
   const canEnd = activeChat?.status === "active";
   const hasMobileNavigation = [
     "/dashboard",
-    "/tasks",
+    "/tickets",
     "/assistant",
     "/account",
     "/admin",
@@ -422,37 +521,48 @@ export function ChatWidget() {
         <section className="chat-panel chat-workspace surface-shadow fixed z-40 flex min-h-0 flex-col overflow-hidden rounded-[var(--container-radius)]">
           <header className="chat-section-header flex h-16 shrink-0 items-center gap-3 px-3 text-[var(--foreground)]">
             <span
-              className={avatarFrameClassName("text-[var(--primary)]")}
+              className={cn(
+                avatarFrameClassName("text-[var(--primary)]"),
+                "relative border border-[color-mix(in_srgb,var(--primary)_20%,var(--border))] bg-[var(--surface)] shadow-sm",
+              )}
               aria-label={t.title}
             >
               <Bot className="size-5" />
             </span>
-            <div className="min-w-0 flex-1">
-              <h2 className="truncate text-sm font-semibold">{t.title}</h2>
-              <p className="mt-0.5 truncate text-xs text-[var(--muted)]">
-                {activeChat?.status === "active" && activeChat.assignedToName
-                  ? t.active(firstNameOnly(activeChat.assignedToName))
-                  : activeChat?.status === "open"
-                    ? t.waiting
-                    : status === "anonymous"
-                      ? t.guestSubtitle
-                      : t.subtitle}
+            <div className="relative min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h2 className="truncate text-sm font-semibold tracking-[-0.01em]">
+                  {t.title}
+                </h2>
+                <span className="desk-live-dot size-1.5 shrink-0 rounded-full bg-[var(--success)]" />
+              </div>
+              <p className="mt-0.5 flex items-center gap-1.5 truncate text-[0.6875rem] font-medium text-[var(--muted)]">
+                <ShieldCheck className="size-3 shrink-0 text-[var(--success)]" />
+                <span className="truncate">
+                  {activeChat?.status === "active" && activeChat.assignedToName
+                    ? t.active(firstNameOnly(activeChat.assignedToName))
+                    : activeChat?.status === "open"
+                      ? t.waiting
+                      : status === "anonymous"
+                        ? t.guestSubtitle
+                        : t.secure}
+                </span>
               </p>
             </div>
-            <button
-              type="button"
-              className="focus-ring grid size-10 shrink-0 place-items-center rounded-full border bg-[var(--surface)] text-[var(--foreground)] transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary)]"
+            <ChatIconButton
               onClick={() => setOpen(false)}
               aria-label={t.close}
               title={t.close}
             >
               <X className="size-4" />
-            </button>
+            </ChatIconButton>
           </header>
 
           {status === "authenticated" && (
-            <div className="flex shrink-0 items-center gap-2 border-b bg-[var(--surface-muted)] p-2">
-              <History className="ml-1 size-4 text-[var(--muted)]" />
+            <div className="desk-toolbar flex shrink-0 items-center gap-2 border-b bg-[color-mix(in_srgb,var(--surface-muted)_68%,var(--surface))] p-2.5">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--surface)] text-[var(--muted)] shadow-sm">
+                <History className="size-4" />
+              </span>
               <select
                 value={selectedId ?? ""}
                 onChange={(event) => {
@@ -461,7 +571,7 @@ export function ChatWidget() {
                   else setSelectedId(nextId);
                 }}
                 aria-label={t.history}
-                className="focus-ring min-w-0 flex-1 rounded-xl border bg-[var(--surface)] px-2 py-2 text-xs font-bold"
+                className="focus-ring h-10 min-w-0 flex-1 rounded-xl border bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--foreground)]"
               >
                 <option value="">{t.newChat}</option>
                 {chats.map((chat) => (
@@ -471,7 +581,6 @@ export function ChatWidget() {
                 ))}
               </select>
               <ChatIconButton
-                bare
                 onClick={requestNewChat}
                 aria-label={t.newChat}
                 title={t.newChat}
@@ -481,9 +590,11 @@ export function ChatWidget() {
             </div>
           )}
           {status !== "authenticated" && (
-            <div className="flex shrink-0 justify-end border-b bg-[var(--surface-muted)] p-2">
+            <div className="desk-toolbar flex shrink-0 items-center justify-between border-b bg-[color-mix(in_srgb,var(--surface-muted)_68%,var(--surface))] px-3 py-2">
+              <span className="text-[0.6875rem] font-medium text-[var(--muted)]">
+                {t.guestSubtitle}
+              </span>
               <ChatIconButton
-                bare
                 onClick={requestNewChat}
                 aria-label={t.newChat}
                 title={t.newChat}
@@ -524,15 +635,25 @@ export function ChatWidget() {
               )}
             />
             {sendMutation.isPending && (
-              <ChatMessageBubble direction="incoming" content="•••" />
+              <ChatMessageBubble
+                direction="incoming"
+                content=""
+                typing
+                name={t.assistant}
+              />
             )}
             <div ref={endRef} />
           </div>
 
           {selectedChat?.status === "ended" && !selectedChat.rating && (
-            <div className="shrink-0 space-y-2 border-t bg-[var(--surface-muted)] p-3">
-              <p className="text-xs font-black">{t.rate}</p>
-              <div className="flex gap-1">
+            <div className="desk-panel-soft shrink-0 space-y-2 border-t bg-[color-mix(in_srgb,var(--surface-muted)_72%,var(--surface))] p-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold">{t.rate}</p>
+                <span className="text-xs font-bold text-amber-500 tabular-nums">
+                  {rating}/5
+                </span>
+              </div>
+              <div className="flex gap-1" role="group" aria-label={t.rate}>
                 {[1, 2, 3, 4, 5].map((score) => (
                   <button
                     key={score}
@@ -574,15 +695,23 @@ export function ChatWidget() {
 
           <footer className="shrink-0 bg-[var(--surface)] p-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
             {!activeChat && supportOffer?.available && (
-              <div className="mb-3">
+              <div className="mb-3 rounded-2xl border border-[color-mix(in_srgb,var(--primary)_22%,var(--border))] bg-[color-mix(in_srgb,var(--primary-soft)_46%,var(--surface))] p-3">
+                <div className="mb-2.5 flex items-start gap-2.5">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-[var(--surface)] text-[var(--primary)] shadow-sm">
+                    <Headset className="size-4" />
+                  </span>
+                  <p className="text-xs leading-5 text-[var(--muted)]">
+                    {t.supportReady}
+                  </p>
+                </div>
                 <Button
                   className="w-full"
                   size="sm"
                   loading={transferMutation.isPending}
                   disabled={transcriptHistory.length === 0}
-                  onClick={() => transferMutation.mutate()}
+                  onClick={() => transferMutation.mutate(undefined)}
                 >
-                  <Headset className="size-4" />
+                  <ArrowUpRight className="size-4" />
                   {t.liveChat}
                 </Button>
               </div>
@@ -621,16 +750,21 @@ export function ChatWidget() {
               />
               <Button
                 size="icon"
-                disabled={disabledInput}
+                disabled={disabledInput || !input.trim()}
                 loading={sendMutation.isPending}
                 onClick={submitMessage}
-                className="size-12 shrink-0 rounded-full"
+                className="size-11 shrink-0 rounded-xl"
                 aria-label={t.send}
                 title={t.send}
               >
                 <Send className="size-4" />
               </Button>
             </div>
+            {!disabledInput && (
+              <p className="mt-2 px-1 text-[0.625rem] font-medium text-[var(--muted)]">
+                {t.composerHint}
+              </p>
+            )}
           </footer>
         </section>
       )}

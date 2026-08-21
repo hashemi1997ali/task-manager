@@ -6,9 +6,12 @@ import {
   Check,
   CheckCircle2,
   Clock3,
+  Headset,
+  Inbox,
   ListTodo,
   MessageSquarePlus,
   Send,
+  ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
@@ -25,8 +28,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { TaskPriorityBadge } from "@/components/ui/domain-badge";
-import { PageHeading } from "@/components/ui/page-heading";
+import { TaskPriorityBadge, TicketCategoryBadge } from "@/components/ui/domain-badge";
 import { ErrorState, LoadingState } from "@/components/ui/states";
 import { avatarFrameClassName } from "@/components/user-avatar";
 import {
@@ -43,100 +45,117 @@ import { ChatSuggestionPanel } from "@/features/chat/chat-suggestion-panel";
 import { ChatThreadHeader } from "@/features/chat/chat-thread-header";
 import { DateGroupedMessageList } from "@/features/chat/date-grouped-message-list";
 import { getErrorMessage } from "@/lib/api-error";
+import { getTaskPriorityLabel, getTicketCategoryLabel } from "@/lib/domain-labels";
 import type {
   AssistantConversation,
   AssistantMessage,
   AssistantTaskProposal,
 } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { usePreferences } from "@/providers/preferences-provider";
 
 const copy = {
   en: {
+    eyebrow: "Private AI workspace",
     title: "AI Assistant",
-    subtitle: "Private task guidance, planning, and confirmed task creation.",
+    subtitle: "Private request guidance, ticket triage, and confirmed ticket creation.",
     conversations: "Conversations",
     newConversation: "New conversation",
     back: "Back to conversations",
-    empty: "Start with a task, a deadline, or a plan you want to improve.",
+    empty: "Describe an issue, ask about an existing request, or draft a new ticket.",
     noConversations: "No private conversations yet.",
     placeholder: "Message AI…",
-    context: "Task context",
-    total: "Total tasks",
+    context: "Ticket context",
+    total: "Total tickets",
     overdue: "Overdue",
     done: "Completed",
     quick: "Quick prompts",
     hideQuick: "Hide quick prompts",
     prompts: [
-      "Plan my day",
-      "Prioritize my open tasks",
-      "Help me handle overdue tasks",
-      "Create a task to review my weekly plan",
+      "Summarize my open requests",
+      "Which ticket needs attention first?",
+      "Help me describe a technical issue",
+      "Create a ticket for an account access problem",
     ],
     assistant: "AI Assistant",
     you: "You",
     privateLabel: "Private to you",
     privateDescription:
       "These conversations are separate from support and cannot be viewed by staff.",
-    scope: "Tasks and planning only",
-    draft: "Task draft",
+    scope: "Requests and support only",
+    ready: "Ready for a request",
+    composerHint: "Enter to send · Shift + Enter for a new line",
+    contextDescription: "Live context from your own request queue.",
+    draft: "Ticket draft",
     description: "Description",
-    due: "Due",
+    due: "Requested resolution",
     confirm: "Confirm & create",
     dismiss: "Dismiss",
     creating: "Creating…",
-    created: "Task created",
+    created: "Ticket created",
     dismissed: "Draft dismissed",
-    openTask: "Open tasks",
-    taskCreated: "Task created successfully.",
-    draftDismissed: "Task draft dismissed.",
+    openTask: "Open tickets",
+    taskCreated: "Ticket created successfully.",
+    draftDismissed: "Ticket draft dismissed.",
     send: "Send",
     thinking: "AI is thinking…",
+    liveSupport: "Continue with live support",
+    supportOpened: "Live support opened",
+    unavailable: "AI assistance is currently disabled.",
   },
   de: {
+    eyebrow: "Privater KI-Arbeitsbereich",
     title: "AI Assistant",
-    subtitle: "Private Aufgabenhilfe, Planung und bestätigte Aufgabenerstellung.",
+    subtitle: "Private Anfragehilfe, Ticket-Triage und bestätigte Ticketerstellung.",
     conversations: "Unterhaltungen",
     newConversation: "Neue Unterhaltung",
     back: "Zurück zu Unterhaltungen",
-    empty: "Beginne mit einer Aufgabe, einer Frist oder einem Plan.",
+    empty: "Beschreibe ein Problem, frage nach einer Anfrage oder entwirf ein Ticket.",
     noConversations: "Noch keine privaten Unterhaltungen.",
     placeholder: "Nachricht…",
-    context: "Aufgabenkontext",
-    total: "Aufgaben gesamt",
+    context: "Ticketkontext",
+    total: "Tickets gesamt",
     overdue: "Überfällig",
     done: "Erledigt",
     quick: "Schnellaktionen",
     hideQuick: "Schnellaktionen ausblenden",
     prompts: [
-      "Plane meinen Tag",
-      "Priorisiere meine offenen Aufgaben",
-      "Hilf mir mit überfälligen Aufgaben",
-      "Erstelle eine Aufgabe für meine Wochenplanung",
+      "Fasse meine offenen Anfragen zusammen",
+      "Welches Ticket braucht zuerst Aufmerksamkeit?",
+      "Hilf mir, ein technisches Problem zu beschreiben",
+      "Erstelle ein Ticket für ein Problem beim Kontozugriff",
     ],
     assistant: "AI Assistant",
     you: "Du",
     privateLabel: "Nur für dich",
     privateDescription:
       "Diese Unterhaltungen sind vom Support getrennt und für Mitarbeitende nicht sichtbar.",
-    scope: "Nur Aufgaben und Planung",
-    draft: "Aufgabenentwurf",
+    scope: "Nur Anfragen und Support",
+    ready: "Bereit für eine Anfrage",
+    composerHint: "Enter zum Senden · Umschalt + Enter für eine neue Zeile",
+    contextDescription: "Live-Kontext aus deiner eigenen Anfrage-Warteschlange.",
+    draft: "Ticketentwurf",
     description: "Beschreibung",
-    due: "Fällig",
+    due: "Gewünschte Lösung",
     confirm: "Bestätigen & erstellen",
     dismiss: "Verwerfen",
     creating: "Wird erstellt…",
-    created: "Aufgabe erstellt",
+    created: "Ticket erstellt",
     dismissed: "Entwurf verworfen",
-    openTask: "Aufgaben öffnen",
-    taskCreated: "Aufgabe wurde erstellt.",
-    draftDismissed: "Aufgabenentwurf wurde verworfen.",
+    openTask: "Tickets öffnen",
+    taskCreated: "Ticket wurde erstellt.",
+    draftDismissed: "Ticketentwurf wurde verworfen.",
     send: "Senden",
     thinking: "KI denkt nach…",
+    liveSupport: "Mit Live-Support fortfahren",
+    supportOpened: "Live-Support geöffnet",
+    unavailable: "Die AI-Unterstützung ist derzeit deaktiviert.",
   },
 } as const;
 
 type Copy = (typeof copy)["en"] | (typeof copy)["de"];
+
+const unavailableMessages = new Set<string>([copy.en.unavailable, copy.de.unavailable]);
 
 type PendingUserMessage = {
   content: string;
@@ -158,9 +177,16 @@ function ProgressiveAssistantMessage({
   onRevealComplete: () => void;
   children?: ReactNode;
 }) {
-  const [visibleLength, setVisibleLength] = useState(() =>
-    reveal ? Math.min(1, message.content.length) : message.content.length,
-  );
+  const [visibleLength, setVisibleLength] = useState(() => {
+    if (!reveal) return message.content.length;
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return message.content.length;
+    }
+    return Math.min(1, message.content.length);
+  });
   const onRevealCompleteRef = useRef(onRevealComplete);
 
   useEffect(() => {
@@ -171,6 +197,10 @@ function ProgressiveAssistantMessage({
 
   useEffect(() => {
     if (!reveal) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onRevealCompleteRef.current();
+      return;
+    }
     const step = Math.max(1, Math.ceil(message.content.length / 100));
     const timer = window.setInterval(() => {
       setVisibleLength((current) => {
@@ -190,8 +220,9 @@ function ProgressiveAssistantMessage({
     <div>
       <ChatMessageBubble
         direction="incoming"
-        content={`${message.content.slice(0, visibleLength)}${complete ? "" : " |"}`}
+        content={message.content.slice(0, visibleLength)}
         markdown
+        typing={!complete}
         createdAt={message.createdAt}
         name={name}
       />
@@ -203,6 +234,7 @@ function ProgressiveAssistantMessage({
 function ProposalCard({
   proposal,
   t,
+  locale,
   intlLocale,
   busy,
   onConfirm,
@@ -210,6 +242,7 @@ function ProposalCard({
 }: {
   proposal: AssistantTaskProposal;
   t: Copy;
+  locale: "en" | "de";
   intlLocale: string;
   busy: boolean;
   onConfirm: () => void;
@@ -226,60 +259,69 @@ function ProposalCard({
           <ListTodo className="size-4 text-[var(--primary)]" />
           {t.draft}
         </p>
-        <TaskPriorityBadge priority={proposal.priority}>
-          {proposal.priority}
-        </TaskPriorityBadge>
-      </div>
-      <p className="mt-3 text-sm font-semibold">{proposal.title}</p>
-      <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-        {proposal.description || "—"}
-      </p>
-      <p className="mt-3 flex items-center gap-2 text-xs text-[var(--muted)]">
-        <Clock3 className="size-3.5" />
-        {t.due}:{" "}
-        {proposal.dueDate
-          ? new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(
-              new Date(proposal.dueDate),
-            )
-          : "—"}
-      </p>
-      {pending ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button size="sm" loading={busy} onClick={onConfirm}>
-            <Check className="size-4" />
-            {t.confirm}
-          </Button>
-          <Button size="sm" variant="secondary" disabled={busy} onClick={onDismiss}>
-            <X className="size-4" />
-            {t.dismiss}
-          </Button>
-        </div>
-      ) : (
-        <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-[var(--muted)]">
-          {proposal.status === "created" ? (
-            <>
-              <CheckCircle2 className="size-4 text-[var(--success)]" />
-              {t.created}
-              <Link
-                href="/tasks"
-                className="focus-ring rounded text-[var(--primary)] hover:underline"
-              >
-                {t.openTask}
-              </Link>
-            </>
-          ) : proposal.status === "creating" ? (
-            <>
-              <Clock3 className="size-4 text-[var(--primary)]" />
-              {t.creating}
-            </>
-          ) : (
-            <>
-              <X className="size-4" />
-              {t.dismissed}
-            </>
+        <div className="flex flex-wrap items-center gap-2">
+          {proposal.category && (
+            <TicketCategoryBadge category={proposal.category}>
+              {getTicketCategoryLabel(proposal.category, locale)}
+            </TicketCategoryBadge>
           )}
+          <TaskPriorityBadge priority={proposal.priority}>
+            {getTaskPriorityLabel(proposal.priority, locale)}
+          </TaskPriorityBadge>
         </div>
-      )}
+      </div>
+      <div className="p-4">
+        <h3 className="text-base font-semibold tracking-[-0.015em]">{proposal.title}</h3>
+        <div className="desk-panel-soft mt-3 rounded-2xl border bg-[var(--surface-muted)]/70 p-3.5">
+          <p className="text-[0.625rem] font-bold tracking-[0.12em] text-[var(--muted)] uppercase">
+            {t.description}
+          </p>
+          <p className="mt-1.5 text-sm leading-6 text-[var(--foreground)]">
+            {proposal.description || "—"}
+          </p>
+        </div>
+        <p className="mt-3 flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
+          <Clock3 className="size-3.5 text-[var(--primary)]" />
+          {t.due}: {proposal.dueDate ? formatDateTime(proposal.dueDate, intlLocale) : "—"}
+        </p>
+        {pending ? (
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <Button size="sm" loading={busy} onClick={onConfirm}>
+              <Check className="size-4" />
+              {t.confirm}
+            </Button>
+            <Button size="sm" variant="secondary" disabled={busy} onClick={onDismiss}>
+              <X className="size-4" />
+              {t.dismiss}
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--muted)]">
+            {proposal.status === "created" ? (
+              <>
+                <CheckCircle2 className="size-4 text-[var(--success)]" />
+                {t.created}
+                <Link
+                  href="/tickets"
+                  className="focus-ring rounded text-[var(--primary)] hover:underline"
+                >
+                  {t.openTask}
+                </Link>
+              </>
+            ) : proposal.status === "creating" ? (
+              <>
+                <Clock3 className="size-4 text-[var(--primary)]" />
+                {t.creating}
+              </>
+            ) : (
+              <>
+                <X className="size-4" />
+                {t.dismissed}
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </Card>
   );
 }
@@ -296,6 +338,12 @@ export function AssistantView() {
     null,
   );
   const [latestResponseId, setLatestResponseId] = useState<string | null>(null);
+  const [unavailableConversationIds, setUnavailableConversationIds] = useState(
+    () => new Set<string>(),
+  );
+  const [supportRequestedConversationIds, setSupportRequestedConversationIds] = useState(
+    () => new Set<string>(),
+  );
   const revealedResponseIdsRef = useRef(new Set<string>());
   const messagesRef = useRef<HTMLDivElement>(null);
 
@@ -348,11 +396,17 @@ export function AssistantView() {
       selected
         ? sendAssistantMessageRequest(selected.id, content, locale)
         : createAssistantConversationRequest(content, locale),
-    onSuccess: ({ conversation }) => {
+    onSuccess: ({ conversation, provider }) => {
       const responseMessage = conversation.messages.at(-1);
       if (responseMessage?.sender === "assistant") {
         setLatestResponseId(responseMessage.id);
       }
+      setUnavailableConversationIds((current) => {
+        const next = new Set(current);
+        if (provider === "unavailable") next.add(conversation.id);
+        else next.delete(conversation.id);
+        return next;
+      });
       setPendingUserMessage(null);
       replaceConversation(conversation);
       setSuggestionsOpen(false);
@@ -375,7 +429,7 @@ export function AssistantView() {
     }) => confirmAssistantTaskRequest(conversationId, messageId),
     onSuccess: ({ conversation }) => {
       replaceConversation(conversation);
-      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["tickets"] });
       toast.success(t.taskCreated);
     },
     onError: (error) => toast.error(getErrorMessage(error, locale)),
@@ -447,6 +501,16 @@ export function AssistantView() {
         ]
       : []),
   ];
+  const lastSelectedMessage = selectedMessages.at(-1);
+  const assistantUnavailable = Boolean(
+    selected &&
+    lastSelectedMessage?.sender === "assistant" &&
+    (unavailableConversationIds.has(selected.id) ||
+      unavailableMessages.has(lastSelectedMessage.content.trim())),
+  );
+  const supportRequested = Boolean(
+    selected && supportRequestedConversationIds.has(selected.id),
+  );
 
   return (
     <div className="md:flex md:h-[calc(100dvh-3rem)] md:min-h-0 md:flex-col md:overflow-hidden lg:h-[calc(100dvh-4rem)]">
@@ -461,14 +525,13 @@ export function AssistantView() {
       >
         <aside
           className={cn(
-            "min-h-0 min-w-0 flex-col border-r",
+            "min-h-0 min-w-0 flex-col border-r bg-[color-mix(in_srgb,var(--surface-muted)_52%,var(--surface))]",
             threadOpen ? "max-xl:hidden xl:flex" : "flex",
           )}
         >
           <div className="chat-section-header flex h-16 shrink-0 items-center justify-between px-4">
             <h2 className="text-sm font-semibold">{t.conversations}</h2>
             <ChatIconButton
-              bare
               aria-label={t.newConversation}
               title={t.newConversation}
               onClick={() => {
@@ -480,7 +543,7 @@ export function AssistantView() {
               <MessageSquarePlus className="size-4" />
             </ChatIconButton>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {conversations.length ? (
               conversations.map((conversation) => (
                 <ChatHistoryItem
@@ -502,9 +565,14 @@ export function AssistantView() {
                 />
               ))
             ) : (
-              <p className="p-5 text-center text-sm text-[var(--muted)]">
-                {t.noConversations}
-              </p>
+              <div className="grid min-h-52 place-items-center p-5 text-center">
+                <div>
+                  <MessageSquarePlus className="mx-auto size-6 text-[var(--primary)]" />
+                  <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                    {t.noConversations}
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </aside>
@@ -531,12 +599,19 @@ export function AssistantView() {
               </span>
             }
             title={t.assistant}
+            subtitle={t.ready}
+            meta={
+              <span className="inline-flex items-center gap-1.5 rounded-full border bg-[var(--surface)] px-2.5 py-1 text-[0.625rem] font-semibold text-[var(--muted)]">
+                <ShieldCheck className="size-3.5 text-[var(--success)]" />
+                {t.scope}
+              </span>
+            }
           />
 
           <div className="chat-message-stream relative isolate min-h-0 flex-1 overflow-hidden">
             <div
               ref={messagesRef}
-              className="absolute inset-0 overflow-y-auto px-3 pb-4 sm:px-4"
+              className="absolute inset-0 overflow-y-auto overscroll-contain px-3 pb-5 sm:px-6 lg:px-8"
             >
               {displayMessages.length ? (
                 <>
@@ -571,6 +646,7 @@ export function AssistantView() {
                             <ProposalCard
                               proposal={item.taskProposal}
                               t={t}
+                              locale={locale}
                               intlLocale={intlLocale}
                               busy={proposalBusy}
                               onConfirm={() =>
@@ -592,28 +668,41 @@ export function AssistantView() {
                     }
                   />
                   {sendMutation.isPending && pendingBelongsToSelected && (
-                    <div
-                      className="mt-3 animate-pulse"
-                      role="status"
-                      aria-label={t.thinking}
-                    >
+                    <div className="mt-3" role="status" aria-label={t.thinking}>
                       <ChatMessageBubble
                         direction="incoming"
-                        content="•••"
+                        content=""
+                        typing
                         name={t.assistant}
                       />
                     </div>
                   )}
                 </>
               ) : (
-                <div className="grid h-full place-items-center px-4 text-center">
-                  <div className="max-w-sm">
-                    <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]">
+                <div className="grid h-full place-items-center px-4 py-8 text-center">
+                  <div className="max-w-lg">
+                    <span className="desk-icon-well mx-auto grid size-14 place-items-center rounded-2xl border bg-[color-mix(in_srgb,var(--primary-soft)_72%,var(--surface))] text-[var(--primary)] shadow-sm">
                       <Sparkles className="size-6" />
                     </span>
-                    <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
+                    <h2 className="mt-4 text-lg font-semibold tracking-[-0.02em]">
+                      {t.ready}
+                    </h2>
+                    <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--muted)]">
                       {t.empty}
                     </p>
+                    <div className="mt-5 grid gap-2 text-left sm:grid-cols-2">
+                      {t.prompts.slice(0, 4).map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => submit(prompt)}
+                          disabled={sendMutation.isPending}
+                          className="focus-ring rounded-2xl border bg-[color-mix(in_srgb,var(--surface)_90%,var(--surface-muted))] px-3.5 py-3 text-xs font-medium leading-5 text-[var(--foreground)] shadow-sm transition-[border-color,transform] hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--primary)_35%,var(--border))] disabled:opacity-50"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -630,7 +719,7 @@ export function AssistantView() {
           <footer className="shrink-0 bg-[var(--surface)] p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <div className="mb-2 flex flex-wrap gap-2">
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="sm"
                 disabled={sendMutation.isPending}
                 aria-expanded={suggestionsOpen}
@@ -659,7 +748,7 @@ export function AssistantView() {
                 placeholder={t.placeholder}
                 aria-label={t.placeholder}
                 rows={1}
-                className="min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-base leading-6 outline-none disabled:opacity-50 sm:text-sm"
+                className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-base leading-6 outline-none placeholder:text-[var(--muted)] disabled:opacity-50 sm:text-sm"
                 dir="auto"
               />
               <Button
@@ -668,11 +757,14 @@ export function AssistantView() {
                 disabled={!message.trim()}
                 aria-label={t.send}
                 title={t.send}
-                className="size-11 shrink-0 rounded-full"
+                className="size-11 shrink-0 rounded-xl"
               >
                 <Send className="size-4" />
               </Button>
             </form>
+            <p className="mt-2 px-1 text-[0.625rem] font-medium text-[var(--muted)]">
+              {t.composerHint}
+            </p>
           </footer>
         </section>
 

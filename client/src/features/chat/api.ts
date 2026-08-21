@@ -99,10 +99,25 @@ export const createSupportChatRequest = (
   history: ChatHistoryItem[],
   locale: "en" | "de",
   reason: SupportChat["escalationReason"],
+  ticketId?: string,
 ): Promise<SupportChat> =>
   apiRequest<{ chat: SupportChat }>("/chat/support", {
     method: "POST",
-    json: { history, locale, reason: reason ?? "human_requested" },
+    json: {
+      history,
+      locale,
+      reason: reason ?? "human_requested",
+      ...(ticketId ? { ticketId } : {}),
+    },
+  }).then((data) => data.chat);
+
+export const openStaffTicketChatRequest = (
+  ticketId: string,
+  locale: "en" | "de",
+): Promise<SupportChat> =>
+  apiRequest<{ chat: SupportChat }>(`/chat/staff/tickets/${ticketId}/open`, {
+    method: "POST",
+    json: { locale },
   }).then((data) => data.chat);
 
 export const sendChatMessageRequest = (

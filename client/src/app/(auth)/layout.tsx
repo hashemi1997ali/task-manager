@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Circle, Sparkles } from "lucide-react";
+import { CheckCircle2, Clock3, Headphones, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { Logo } from "@/components/logo";
@@ -9,23 +9,31 @@ import { usePreferences } from "@/providers/preferences-provider";
 
 const copy = {
   en: {
-    title: "Everything you need to stay organized.",
+    title: "Support that keeps every detail connected.",
     description:
-      "Plan tasks, track progress and get help from your personal AI assistant.",
-    today: "Today",
-    tasks: ["Ship the landing page", "Reply to support", "Plan next sprint"],
-    suggestion: "AI suggestion",
-    suggestionText: "Reschedule two overdue tasks?",
+      "Submit requests, follow response targets, and move seamlessly from AI guidance to a human agent.",
+    today: "Live request queue",
+    tasks: [
+      "Cannot access billing history",
+      "Invoice contains the wrong address",
+      "Request export for account data",
+    ],
+    suggestion: "AI triage",
+    suggestionText: "Categorize this as Billing and prepare it for the support team?",
     home: "Back to home",
   },
   de: {
-    title: "Alles, was du brauchst, um organisiert zu bleiben.",
+    title: "Support, bei dem kein Detail verloren geht.",
     description:
-      "Plane Aufgaben, verfolge Fortschritte und nutze deinen persönlichen KI-Assistenten.",
-    today: "Heute",
-    tasks: ["Landingpage veröffentlichen", "Support antworten", "Sprint planen"],
-    suggestion: "KI-Vorschlag",
-    suggestionText: "Zwei überfällige Aufgaben neu planen?",
+      "Sende Anfragen, verfolge Reaktionsziele und wechsle nahtlos von KI-Hilfe zu einem Support-Agenten.",
+    today: "Live-Anfragen",
+    tasks: [
+      "Kein Zugriff auf den Rechnungsverlauf",
+      "Falsche Adresse auf der Rechnung",
+      "Datenexport für das Konto anfragen",
+    ],
+    suggestion: "KI-Triage",
+    suggestionText: "Als Abrechnung kategorisieren und für das Support-Team vorbereiten?",
     home: "Zur Startseite",
   },
 } as const;
@@ -38,7 +46,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <main
       id="main-content"
       tabIndex={-1}
-      className="grid min-h-dvh bg-[var(--background)] lg:grid-cols-2"
+      className="relative grid min-h-dvh overflow-hidden bg-[var(--background)] lg:grid-cols-[minmax(28rem,1.08fr)_minmax(30rem,.92fr)]"
     >
       <aside className="relative max-lg:hidden min-h-dvh overflow-hidden flex-col bg-[#080711] px-10 py-10 text-white lg:flex xl:px-16">
         <div className="pointer-events-none absolute -bottom-32 -left-24 h-[38rem] w-[46rem] rounded-full bg-[#7770db] opacity-55 blur-[110px]" />
@@ -54,7 +62,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <h1 className="max-w-lg text-5xl leading-[1.02] font-medium tracking-[-0.055em]">
             {t.title}
           </h1>
-          <p className="mt-5 max-w-xl text-base leading-7 text-white/70">
+          <p className="mt-6 max-w-xl text-base leading-7 text-white/58">
             {t.description}
           </p>
           <div className="mt-12 rounded-[1.75rem] border border-white/6 bg-black/15 p-5 shadow-[0_28px_90px_rgb(0_0_0_/_0.25)] backdrop-blur-2xl">
@@ -63,26 +71,40 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               {t.tasks.map((task, index) => (
                 <div
                   key={task}
-                  className="flex items-center gap-3 rounded-[var(--control-radius)] bg-white/[.055] p-3.5"
+                    className="group flex items-center gap-3 rounded-[1rem] border border-white/7 bg-white/[.045] p-3.5 transition hover:border-[#9a8cff]/35 hover:bg-white/[.075]"
                 >
                   {index === 2 ? (
-                    <CheckCircle2 className="size-5 text-[var(--primary)]" />
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300">
+                        <CheckCircle2 className="size-4.5" />
+                      </span>
                   ) : (
-                    <Circle className="size-5 text-white/75" />
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#9a8cff]/12 text-[#b1a6ff]">
+                        <Headphones className="size-4.5" />
+                      </span>
                   )}
-                  <div>
-                    <p className="text-sm font-semibold">{task}</p>
-                    <p className="mt-1 text-xs text-white/55">Today · High priority</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-bold">{task}</p>
+                      <p className="mt-1 text-[10px] font-semibold text-white/38">
+                      {locale === "de" ? "SLA · Hohe Priorität" : "SLA · High priority"}
+                    </p>
                   </div>
                 </div>
               ))}
-            </div>
-            <div className="mt-3 ml-auto max-w-60 rounded-[var(--control-radius)] bg-[var(--primary)] p-4">
-              <p className="flex items-center gap-2 text-xs font-semibold">
-                <Sparkles className="size-4" />
-                {t.suggestion}
-              </p>
-              <p className="mt-2 text-xs text-white/80">{t.suggestionText}</p>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <div className="rounded-[1rem] border border-white/8 bg-white/5 p-3.5">
+                  <ShieldCheck className="size-4 text-emerald-300" />
+                  <p className="mt-3 text-[10px] font-black tracking-[0.1em] text-white/35 uppercase">SLA health</p>
+                  <p className="mt-1 text-xl font-black tracking-[-0.04em]">94%</p>
+                </div>
+                <div className="flex-1 rounded-[1rem] bg-[linear-gradient(145deg,#735ff2,#5142ba)] p-3.5 shadow-[0_16px_36px_rgb(73_59_190_/_0.35)]">
+                  <p className="flex items-center gap-2 text-[10px] font-black tracking-[0.08em] uppercase">
+                    <Sparkles className="size-3.5" />
+                    {t.suggestion}
+                  </p>
+                  <p className="mt-2 text-[11px] leading-5 text-white/75">{t.suggestionText}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

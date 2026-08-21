@@ -2,7 +2,7 @@
   "name": "karino",
   "version": "1.0.0",
   "private": true,
-  "description": "Karino is a full-stack productivity platform with an Express API and a Next.js client.",
+  "description": "Karino Desk is an AI-first customer support workspace with time-aware ticketing and live human help.",
   "engines": {
     "node": ">=24.0.0"
   },

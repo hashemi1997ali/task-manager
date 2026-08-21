@@ -33,8 +33,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
   const copy = metadataByLocale[locale];
   return {
-    title: { default: copy.title, template: `%s | Karino` },
+    title: { default: copy.title, template: `%s | Karino Desk` },
     description: copy.description,
+    applicationName: "Karino Desk",
   };
 }
 

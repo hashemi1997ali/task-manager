@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, LogIn, Mail, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -18,8 +18,10 @@ import { usePreferences } from "@/providers/preferences-provider";
 const copy = {
   en: {
     success: "Welcome back. You're now logged in.",
-    title: "Welcome back 👋",
-    description: "Log in to keep planning and completing your work.",
+    eyebrow: "Secure workspace",
+    title: "Welcome back",
+    description: "Log in to track requests and continue your support conversations.",
+    security: "Private requests · managed sessions",
     email: "Email",
     password: "Password",
     hidePassword: "Hide password",
@@ -31,8 +33,10 @@ const copy = {
   },
   de: {
     success: "Willkommen zurück. Du bist jetzt angemeldet.",
-    title: "Willkommen zurück 👋",
-    description: "Melde dich an, um deine Aufgaben weiter zu planen und zu erledigen.",
+    eyebrow: "Sicherer Arbeitsbereich",
+    title: "Willkommen zurück",
+    description: "Melde dich an, um Anfragen und Support-Unterhaltungen zu verfolgen.",
+    security: "Private Anfragen · verwaltete Sitzungen",
     email: "E-Mail",
     password: "Passwort",
     hidePassword: "Passwort ausblenden",
@@ -79,29 +83,51 @@ export function LoginForm() {
   });
 
   return (
-    <div className="w-full">
-      <p className="eyebrow text-[var(--primary)]">Karino workspace</p>
-      <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-[var(--foreground)]">
-        {t.title}
-      </h1>
-      <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{t.description}</p>
-      <form onSubmit={onSubmit} className="mt-8 grid gap-3" noValidate>
+    <div className="desk-panel desk-grid-glow relative w-full overflow-hidden rounded-[var(--container-radius)] border bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] p-5 shadow-[var(--shadow-panel)] sm:p-7">
+      <div className="pointer-events-none absolute -top-20 right-0 size-44 rounded-full bg-[var(--primary-glow)] blur-3xl" />
+      <div className="relative">
+        <div className="flex items-center gap-3">
+          <span className="desk-icon-well grid size-11 place-items-center rounded-2xl border bg-[var(--surface)] text-[var(--primary)] shadow-sm">
+            <ShieldCheck className="size-5" />
+          </span>
+          <div>
+            <p className="desk-eyebrow text-[0.6875rem] font-bold tracking-[0.14em] text-[var(--primary)] uppercase">
+              {t.eyebrow}
+            </p>
+            <p className="mt-1 text-[0.6875rem] font-medium text-[var(--muted)]">
+              {t.security}
+            </p>
+          </div>
+        </div>
+        <h1 className="mt-6 text-3xl font-bold tracking-[-0.04em] text-[var(--foreground)] sm:text-4xl">
+          {t.title}
+        </h1>
+        <p className="mt-2 max-w-md text-sm leading-7 text-[var(--muted)]">
+          {t.description}
+        </p>
+      </div>
+      <form onSubmit={onSubmit} className="relative mt-7 grid gap-3" noValidate>
         <Field label={t.email} error={errors.email?.message}>
-          <Input
-            type="email"
-            dir="ltr"
-            autoComplete="email"
-            placeholder="you@example.com"
-            {...register("email")}
-          />
+          <div className="relative">
+            <Mail className="pointer-events-none absolute top-1/2 left-3.5 z-10 size-4 -translate-y-1/2 text-[var(--muted)]" />
+            <Input
+              type="email"
+              dir="ltr"
+              autoComplete="email"
+              placeholder="you@example.com"
+              className="h-12 bg-[var(--surface)] pl-11"
+              {...register("email")}
+            />
+          </div>
         </Field>
         <Field label={t.password} error={errors.password?.message}>
           <div className="relative">
+            <LockKeyhole className="pointer-events-none absolute top-1/2 left-3.5 z-10 size-4 -translate-y-1/2 text-[var(--muted)]" />
             <Input
               type={showPassword ? "text" : "password"}
               dir="ltr"
               autoComplete="current-password"
-              className="pr-12"
+              className="h-12 bg-[var(--surface)] pr-12 pl-11"
               {...register("password")}
             />
             <button
@@ -116,16 +142,21 @@ export function LoginForm() {
         </Field>
         <Link
           href="/forgot-password"
-          className="-mt-2 justify-self-end text-xs font-bold text-[var(--primary)] hover:text-[var(--primary-dark)]"
+          className="-mt-2 justify-self-end rounded text-xs font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)] hover:underline"
         >
           {t.forgot}
         </Link>
-        <Button type="submit" size="lg" loading={isSubmitting} className="mt-1 w-full">
+        <Button
+          type="submit"
+          size="lg"
+          loading={isSubmitting}
+          className="mt-1 w-full shadow-[0_12px_28px_var(--primary-glow)]"
+        >
           <LogIn className="size-4" />
           {t.submit}
         </Button>
       </form>
-      <p className="mt-7 text-center text-sm text-slate-500">
+      <p className="relative mt-6 border-t pt-5 text-center text-sm text-[var(--muted)]">
         {t.noAccount}{" "}
         <Link
           href="/register"

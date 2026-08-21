@@ -4,8 +4,8 @@
  * The assistant is composed of four logical components:
  *  - Triage Router      (internal only, never replies to the user)
  *  - Website Help Agent  (public and signed-in website guidance)
- *  - Task Agent          (private planning guidance and task proposals)
- *  - Staff Account Agent (admin / super_admin account operations)
+ *  - Request Agent       (private support-ticket guidance and proposals)
+ *  - Staff Workspace Guide (guidance only; no account data or mutations)
  * Provider unavailability is a fallback state, not an agent.
  *
  * Guardrails (Language, Scope, Permission, Output) are applied centrally
@@ -47,16 +47,20 @@ export interface AssistantContext {
 }
 
 export interface TaskContextItem {
+  ticketNumber: string;
   title: string;
-  status: "todo" | "in-progress" | "done";
-  priority: "low" | "medium" | "high";
+  status: "todo" | "in-progress" | "waiting-customer" | "done";
+  priority: "low" | "medium" | "high" | "urgent";
+  category: "general" | "account" | "technical" | "billing" | "feature";
   dueDate: string | null;
+  resolutionDueAt: string | null;
 }
 
 export interface TaskProposalDraft {
   title: string;
   description: string;
-  priority: "low" | "medium" | "high";
+  priority: "low" | "medium" | "high" | "urgent";
+  category: "general" | "account" | "technical" | "billing" | "feature";
   dueDate: Date | null;
 }
 

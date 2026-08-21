@@ -3,16 +3,10 @@ import type { HydratedDocument, QueryFilter } from "mongoose";
 import { SupportChat, type ISupportChat, type SupportChatLocale } from "#models";
 import { getPositiveIntegerEnv, isAdminRoles } from "#utils";
 
-export const CHAT_WELCOME_SENDER = "welcome";
 export type SupportAudience = "all-staff" | "super-admin";
 
 export const resolveSupportAudience = (roles: readonly string[]): SupportAudience =>
   isAdminRoles(roles) ? "super-admin" : "all-staff";
-
-export const chatWelcomeMessage = (locale: SupportChatLocale): string =>
-  locale === "de"
-    ? "Hallo! Ich bin der AI Assistant. Wie kann ich dir heute helfen?"
-    : "Hello! I'm the AI Assistant. How can I help you today?";
 
 export const assistantIdleSystemMessage = (locale: SupportChatLocale): string =>
   locale === "de"

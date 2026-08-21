@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
 
-import type { TaskPriority, TaskStatus, UserRole } from "@/lib/types";
+import type {
+  TaskPriority,
+  TaskStatus,
+  TicketCategory,
+  TicketSource,
+  UserRole,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const base =
@@ -10,6 +16,8 @@ const taskStatusClasses: Record<TaskStatus, string> = {
   todo: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-500/25 dark:bg-slate-500/15 dark:text-slate-300",
   "in-progress":
     "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/25 dark:bg-amber-500/15 dark:text-amber-300",
+  "waiting-customer":
+    "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/25 dark:bg-violet-500/15 dark:text-violet-300",
   done: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-500/15 dark:text-emerald-300",
 };
 
@@ -17,6 +25,30 @@ const taskPriorityClasses: Record<TaskPriority, string> = {
   low: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/25 dark:bg-sky-500/15 dark:text-sky-300",
   medium: "border-[var(--primary)]/20 bg-[var(--primary-soft)] text-[var(--primary)]",
   high: "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/25 dark:bg-rose-500/15 dark:text-rose-300",
+  urgent:
+    "border-red-300 bg-red-600 text-white dark:border-red-400/40 dark:bg-red-500/20 dark:text-red-200",
+};
+
+const ticketCategoryClasses: Record<TicketCategory, string> = {
+  general:
+    "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-500/25 dark:bg-slate-500/15 dark:text-slate-300",
+  account:
+    "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-400/25 dark:bg-blue-500/15 dark:text-blue-300",
+  technical:
+    "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-400/25 dark:bg-cyan-500/15 dark:text-cyan-300",
+  billing:
+    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/25 dark:bg-amber-500/15 dark:text-amber-300",
+  feature:
+    "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/25 dark:bg-violet-500/15 dark:text-violet-300",
+};
+
+const ticketSourceClasses: Record<TicketSource, string> = {
+  manual: "border-slate-200 bg-transparent text-[var(--muted)] dark:border-slate-500/25",
+  assistant:
+    "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/25 dark:bg-violet-500/15 dark:text-violet-300",
+  chat: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-500/15 dark:text-emerald-300",
+  contact:
+    "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/25 dark:bg-sky-500/15 dark:text-sky-300",
 };
 
 export const taskStatusBadgeClassName = (
@@ -52,6 +84,36 @@ export function TaskPriorityBadge({
 }) {
   return (
     <span className={taskPriorityBadgeClassName(priority, className)}>{children}</span>
+  );
+}
+
+export function TicketCategoryBadge({
+  category,
+  children,
+  className,
+}: {
+  category: TicketCategory;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <span className={cn(base, ticketCategoryClasses[category], className)}>
+      {children}
+    </span>
+  );
+}
+
+export function TicketSourceBadge({
+  source,
+  children,
+  className,
+}: {
+  source: TicketSource;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <span className={cn(base, ticketSourceClasses[source], className)}>{children}</span>
   );
 }
 

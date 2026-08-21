@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, LayoutDashboard } from "lucide-react";
+import { ArrowRight, Inbox, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -14,24 +14,24 @@ import { cn } from "@/lib/utils";
 const copy = {
   en: {
     features: "Features",
-    workflow: "How it works",
+    workflow: "AI + human",
     security: "Security",
-    tasks: "My tasks",
+    tickets: "Open tickets",
+    assistant: "AI assistant",
     contact: "Contact",
-    dashboard: "My dashboard",
     login: "Log in",
-    start: "Start free",
+    start: "Start your desk",
     navigation: "Main navigation",
   },
   de: {
     features: "Funktionen",
-    workflow: "So funktioniert's",
+    workflow: "KI + Mensch",
     security: "Sicherheit",
-    tasks: "Meine Aufgaben",
+    tickets: "Tickets öffnen",
+    assistant: "KI-Assistent",
     contact: "Kontakt",
-    dashboard: "Mein Dashboard",
     login: "Anmelden",
-    start: "Kostenlos starten",
+    start: "Desk starten",
     navigation: "Hauptnavigation",
   },
 } as const;

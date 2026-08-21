@@ -138,19 +138,20 @@ export function ContactView() {
                   <span className="desk-icon-well">
                     <Mail className="size-5" />
                   </span>
-                  <div>
-                    <p className="text-xs font-black text-[var(--muted)] uppercase">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 text-[0.68rem] font-black tracking-[0.08em] text-[var(--muted)] uppercase">
+                      <span className="desk-live-dot" aria-hidden="true" />
                       {t.details}
                     </p>
                     {configQuery.data?.email ? (
                       <a
                         href={`mailto:${configQuery.data.email}`}
-                        className="break-all font-bold hover:text-[var(--primary)]"
+                        className="mt-2 block break-all text-sm font-bold hover:text-[var(--primary)]"
                       >
                         {configQuery.data.email}
                       </a>
                     ) : (
-                      <p className="text-sm text-[var(--muted)]">{t.unavailable}</p>
+                      <p className="mt-2 text-sm text-[var(--muted)]">{t.unavailable}</p>
                     )}
                   </div>
                 </div>
@@ -166,10 +167,11 @@ export function ContactView() {
                         href={social.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="focus-ring flex items-center gap-3 rounded-2xl border p-3 font-bold capitalize transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                        className="focus-ring grid size-10 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] transition hover:-translate-y-0.5 hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                        aria-label={social.platform}
+                        title={social.platform}
                       >
-                        <Icon className="size-5" />
-                        {social.platform}
+                        <Icon className="size-4" />
                       </a>
                     );
                   })}
@@ -177,6 +179,15 @@ export function ContactView() {
                 </div>
               </Card>
             </div>
+            <div
+              className="pointer-events-none absolute -end-32 -top-20 size-80 rounded-full bg-[var(--primary)]/15 blur-3xl"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute -bottom-28 -start-24 size-64 rounded-full bg-cyan-400/10 blur-3xl"
+              aria-hidden="true"
+            />
+          </section>
 
             <Card className="chat-workspace overflow-hidden p-0">
               <div className="chat-section-header flex h-16 items-center gap-3 px-5 sm:px-6">

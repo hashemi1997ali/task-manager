@@ -27,17 +27,30 @@ export interface User {
   updatedAt: string;
 }
 
-export type TaskStatus = "todo" | "in-progress" | "done";
-export type TaskPriority = "low" | "medium" | "high";
+export type TaskStatus = "todo" | "in-progress" | "waiting-customer" | "done";
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
+export type TicketCategory = "general" | "account" | "technical" | "billing" | "feature";
+export type TicketSource = "manual" | "assistant" | "chat" | "contact";
+
+export type TicketAssignee =
+  | string
+  | Pick<User, "id" | "firstName" | "lastName" | "email" | "roles" | "profileImage">;
 
 export interface Task {
   id?: string;
   _id?: string;
   title: string;
   description: string;
+  ticketNumber: string;
   status: TaskStatus;
   priority: TaskPriority;
+  category: TicketCategory;
+  source: TicketSource;
   dueDate: string | null;
+  assignee: TicketAssignee | null;
+  firstResponseDueAt: string | null;
+  resolutionDueAt: string | null;
+  firstRespondedAt: string | null;
   completedAt: string | null;
   owner:
     | string
@@ -63,6 +76,9 @@ export interface TaskSummary {
   low: number;
   medium: number;
   high: number;
+  urgent?: number;
+  waitingCustomer?: number;
+  slaBreached?: number;
   overdue: number;
 }
 
@@ -74,8 +90,16 @@ export interface TodayDashboard {
     completed: number;
     overdue: number;
     completionRate: number;
+    openTickets: number;
+    waitingCustomer: number;
+    urgentOpen: number;
+    unassigned: number;
+    slaBreached: number;
+    slaAtRisk: number;
+    resolvedToday: number;
   };
   focusTasks: Task[];
+  needsAttention?: Task[];
   upcoming: Array<{
     date: string;
     count: number;
@@ -84,6 +108,18 @@ export interface TodayDashboard {
     date: string;
     completed: number;
   }>;
+  hourlySchedule: Array<{
+    hour: number;
+    requestedDeadlines: number;
+    firstResponseDeadlines: number;
+    resolutionDeadlines: number;
+  }>;
+  sla: {
+    firstResponseBreaches: number;
+    resolutionBreaches: number;
+    breachedTickets: number;
+    atRiskTickets: number;
+  };
   dailyBrief: {
     overdue: number;
     highPriority: number;
@@ -144,6 +180,20 @@ export interface SupportChat {
       >
     | null;
   guest: { id: string | null; email: string | null; label: string } | null;
+  ticketId: string | null;
+  linkedTicket:
+    | (Pick<
+        Task,
+        | "ticketNumber"
+        | "title"
+        | "status"
+        | "priority"
+        | "category"
+        | "assignee"
+        | "firstResponseDueAt"
+        | "resolutionDueAt"
+      > & { id: string })
+    | null;
   origin: "user" | "admin" | "guest";
   locale: "en" | "de";
   subject: string;
@@ -167,10 +217,18 @@ export interface AssistantTaskProposal {
   title: string;
   description: string;
   priority: TaskPriority;
+  category?: TicketCategory;
+  source?: TicketSource;
   dueDate: string | null;
   status: AssistantProposalStatus;
   taskId: string | null;
 }
+
+// The API keeps the historical `Task` payload name for backwards compatibility,
+// while the product presents these records as support tickets.
+export type Ticket = Task;
+export type TicketStatus = TaskStatus;
+export type TicketPriority = TaskPriority;
 
 export interface AssistantMessage {
   id: string;

@@ -14,6 +14,7 @@ import { deleteProfileImageFromCloudinary } from "../middlewares/upload.ts";
 
 export interface AccountDeletionResult {
   deletedTaskCount: number;
+  deletedTicketCount: number;
   deletedChatCount: number;
   deletedAssistantConversationCount: number;
 }
@@ -41,6 +42,10 @@ export const deleteUserAccount = async (
     ]);
 
   await Promise.all([
+    Task.updateMany(
+      { assignee: user._id, owner: { $ne: user._id }, status: { $ne: "done" } },
+      { $set: { assignee: null, status: "todo" } },
+    ),
     SupportChat.updateMany(
       { assignedTo: user._id },
       { $set: { assignedTo: null, assignedToName: null } },
@@ -67,6 +72,7 @@ export const deleteUserAccount = async (
 
   return {
     deletedTaskCount: taskDeleteResult.deletedCount,
+    deletedTicketCount: taskDeleteResult.deletedCount,
     deletedChatCount: chatDeleteResult.deletedCount,
     deletedAssistantConversationCount: assistantConversationDeleteResult.deletedCount,
   };

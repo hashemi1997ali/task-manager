@@ -26,7 +26,8 @@ const germanApiMessages: Record<string, string> = {
   "Refresh token has expired": "Deine Sitzung ist abgelaufen.",
   "Invalid refresh token": "Deine Sitzung ist ungültig.",
   "User not found": "Das Benutzerkonto wurde nicht gefunden.",
-  "Task not found": "Die Aufgabe wurde nicht gefunden.",
+  "Task not found": "Das Ticket wurde nicht gefunden.",
+  "Ticket not found": "Das Ticket wurde nicht gefunden.",
   "Administrator permission is required": "Dafür sind Administratorrechte nötig.",
   "You cannot remove your own administrator role":
     "Du kannst deine eigene Administratorrolle nicht entfernen.",
@@ -36,12 +37,14 @@ const germanApiMessages: Record<string, string> = {
     "Der letzte Administrator kann nicht zurückgestuft werden.",
   "The last administrator cannot be deleted":
     "Der letzte Administrator kann nicht gelöscht werden.",
-  "Invalid task ID": "Die Aufgaben-ID ist ungültig.",
+  "Invalid task ID": "Die Ticket-ID ist ungültig.",
+  "Invalid ticket ID": "Die Ticket-ID ist ungültig.",
   "Invalid user ID": "Die Benutzer-ID ist ungültig.",
   "Invalid session ID": "Die Sitzungs-ID ist ungültig.",
   "Invalid access token": "Deine Anmeldung ist ungültig.",
   "User no longer exists": "Das Benutzerkonto existiert nicht mehr.",
-  "At least one task field must be provided": "Ändere mindestens ein Aufgabenfeld.",
+  "At least one task field must be provided": "Ändere mindestens ein Ticketfeld.",
+  "At least one ticket field must be provided": "Ändere mindestens ein Ticketfeld.",
   "Active session not found": "Die aktive Sitzung wurde nicht gefunden.",
   "Refresh authentication is required": "Bitte melde dich erneut an.",
   "Invalid refresh session": "Die Sitzung ist ungültig.",
@@ -84,6 +87,14 @@ const germanApiMessages: Record<string, string> = {
   "This chat has already been sent to support":
     "Dieser Chat wurde bereits an den Support gesendet.",
   "This chat has already been rated": "Dieser Chat wurde bereits bewertet.",
+  "Transfer or end the active support chat before changing the ticket assignee":
+    "Übertrage oder beende zuerst den aktiven Support-Chat, bevor du die Ticketzuweisung änderst.",
+  "End the active support chat before changing the ticket status":
+    "Beende zuerst den aktiven Support-Chat, bevor du den Ticketstatus änderst.",
+  "The ticket changed before your update could be saved":
+    "Das Ticket wurde gleichzeitig geändert. Lade die Ansicht neu und versuche es erneut.",
+  "The ticket changed before the support chat could open":
+    "Das Ticket wurde gleichzeitig geändert. Lade die Ansicht neu, bevor du den Support-Chat öffnest.",
   "End the chat before rating it": "Beende den Chat, bevor du ihn bewertest.",
   "This chat is unavailable or has already been claimed":
     "Dieser Chat ist nicht verfügbar oder wurde bereits angenommen.",
@@ -120,6 +131,9 @@ const germanApiMessages: Record<string, string> = {
     "Der E-Mail-Versand ist vorübergehend nicht verfügbar.",
   "Email delivery failed": "Die E-Mail konnte nicht gesendet werden.",
   "Contact message not found": "Die Kontaktnachricht wurde nicht gefunden.",
+  "AI assistance is currently disabled.": "Die AI-Unterstützung ist derzeit deaktiviert.",
+  "Die AI-Unterstützung ist derzeit deaktiviert.":
+    "Die AI-Unterstützung ist derzeit deaktiviert.",
   "Too many contact messages. Please try again later":
     "Zu viele Kontaktnachrichten. Bitte versuche es später erneut.",
   "Too many password reset requests. Please try again later":

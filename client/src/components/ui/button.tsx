@@ -18,16 +18,16 @@ const variants: Record<ButtonVariant, string> = {
   secondary:
     "border border-[color-mix(in_srgb,var(--foreground)_6%,transparent)] bg-[var(--surface)] text-[var(--foreground)] shadow-sm hover:border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]",
   ghost:
-    "shadow-none text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]",
+    "border border-transparent shadow-none text-[var(--muted)] hover:border-[var(--border)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]",
   danger:
     "border border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100 active:bg-rose-100 dark:border-rose-400/25 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/25",
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-11 px-3 text-sm",
-  md: "h-11 px-4 text-sm",
-  lg: "h-12 px-6 text-base",
-  icon: "size-11 overflow-hidden p-0",
+  sm: "h-10 px-3.5 text-sm",
+  md: "h-11 px-4.5 text-sm",
+  lg: "h-12 px-6 text-[0.95rem]",
+  icon: "size-10 overflow-hidden p-0",
 };
 
 export function buttonClassName({

@@ -38,6 +38,7 @@ export interface ISupportRating {
 
 export interface ISupportChat {
   user: Types.ObjectId | null;
+  ticket: Types.ObjectId | null;
   origin: SupportChatOrigin;
   locale: SupportChatLocale;
   subject: string;
@@ -99,6 +100,12 @@ const supportChatSchema = new Schema<ISupportChat>(
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      default: null,
+      index: true,
+    },
+    ticket: {
+      type: Schema.Types.ObjectId,
+      ref: "Task",
       default: null,
       index: true,
     },
@@ -235,6 +242,18 @@ supportChatSchema.index(
   { expireAfterSeconds: 0, partialFilterExpression: { expiresAt: { $type: "date" } } },
 );
 supportChatSchema.index({ user: 1, updatedAt: -1 });
+supportChatSchema.index({ ticket: 1, updatedAt: -1 });
+supportChatSchema.index(
+  { ticket: 1 },
+  {
+    name: "unique_active_ticket_chat",
+    unique: true,
+    partialFilterExpression: {
+      ticket: { $type: "objectId" },
+      status: { $in: ["open", "active"] },
+    },
+  },
+);
 supportChatSchema.index({ status: 1, requiresSuperAdmin: 1, updatedAt: -1 });
 supportChatSchema.index({ status: 1, assistantIdleExpiresAt: 1 });
 supportChatSchema.index(

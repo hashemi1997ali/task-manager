@@ -5,6 +5,8 @@ import type {
   TaskPriority,
   TaskStatus,
   TaskSummary,
+  TicketCategory,
+  TicketSource,
   TodayDashboard,
 } from "@/lib/types";
 
@@ -14,9 +16,22 @@ export interface TaskFilters {
   search?: string;
   status?: TaskStatus | "";
   priority?: TaskPriority | "";
-  sortBy?: "createdAt" | "updatedAt" | "dueDate" | "title" | "status";
+  category?: TicketCategory | "";
+  source?: TicketSource | "";
+  attention?:
+    "first-response-breached" | "resolution-breached" | "requested-overdue" | "";
+  sortBy?:
+    | "createdAt"
+    | "updatedAt"
+    | "dueDate"
+    | "firstResponseDueAt"
+    | "resolutionDueAt"
+    | "title"
+    | "status";
   order?: "asc" | "desc";
   ownerId?: string;
+  assigneeId?: string;
+  unassigned?: boolean;
 }
 
 export interface TaskListResult {
@@ -29,7 +44,12 @@ export interface TaskMutationValues {
   description?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
+  category?: TicketCategory;
+  source?: TicketSource;
   dueDate?: string | null;
+  firstResponseDueAt?: string | null;
+  resolutionDueAt?: string | null;
+  assignee?: string | null;
 }
 
 const toQuery = (filters: TaskFilters): string => {
@@ -39,9 +59,14 @@ const toQuery = (filters: TaskFilters): string => {
   if (filters.search) query.set("search", filters.search);
   if (filters.status) query.set("status", filters.status);
   if (filters.priority) query.set("priority", filters.priority);
+  if (filters.category) query.set("category", filters.category);
+  if (filters.source) query.set("source", filters.source);
+  if (filters.attention) query.set("attention", filters.attention);
   if (filters.sortBy) query.set("sortBy", filters.sortBy);
   if (filters.order) query.set("order", filters.order);
   if (filters.ownerId) query.set("ownerId", filters.ownerId);
+  if (filters.assigneeId) query.set("assigneeId", filters.assigneeId);
+  if (filters.unassigned) query.set("unassigned", "true");
   return query.toString();
 };
 
@@ -53,7 +78,7 @@ export const getTasksRequest = async (
     tasks: Task[];
     pagination?: Pagination;
     total?: number;
-  }>(`${admin ? "/admin/tasks" : "/tasks"}?${toQuery(filters)}`);
+  }>(`${admin ? "/admin/tickets" : "/tickets"}?${toQuery(filters)}`);
 
   return {
     tasks: data.tasks,
@@ -69,20 +94,20 @@ export const getTasksRequest = async (
 };
 
 export const getTaskSummaryRequest = async (): Promise<TaskSummary> => {
-  const data = await apiRequest<{ summary: TaskSummary }>("/tasks/summary");
+  const data = await apiRequest<{ summary: TaskSummary }>("/tickets/summary");
   return data.summary;
 };
 
 export const getTodayDashboardRequest = async (): Promise<TodayDashboard> => {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const data = await apiRequest<{ dashboard: TodayDashboard }>(
-    `/tasks/dashboard?timeZone=${encodeURIComponent(timeZone)}`,
+    `/tickets/dashboard?timeZone=${encodeURIComponent(timeZone)}`,
   );
   return data.dashboard;
 };
 
 export const createTaskRequest = async (values: TaskMutationValues): Promise<Task> => {
-  const data = await apiRequest<{ task: Task }>("/tasks", {
+  const data = await apiRequest<{ task: Task }>("/tickets", {
     method: "POST",
     json: values,
   });
@@ -95,13 +120,13 @@ export const updateTaskRequest = async (
   admin = false,
 ): Promise<Task> => {
   const data = await apiRequest<{ task: Task }>(
-    `${admin ? "/admin/tasks" : "/tasks"}/${id}`,
+    `${admin ? "/admin/tickets" : "/tickets"}/${id}`,
     { method: "PATCH", json: values },
   );
   return data.task;
 };
 
 export const deleteTaskRequest = (id: string, admin = false): Promise<void> =>
-  apiRequest<void>(`${admin ? "/admin/tasks" : "/tasks"}/${id}`, {
+  apiRequest<void>(`${admin ? "/admin/tickets" : "/tickets"}/${id}`, {
     method: "DELETE",
   });

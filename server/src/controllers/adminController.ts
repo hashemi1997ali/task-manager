@@ -17,8 +17,12 @@ import { banUser, deleteUserAccount, setAdministratorRole, unbanUser } from "#se
 import {
   AppError,
   applyTaskStatusTransition,
+  applyTicketPriorityTransition,
   canDeleteAccount,
   canManageBan,
+  isStaffRoles,
+  isSuperAdminRoles,
+  serializeTicket,
 } from "#utils";
 import {
   adminTaskQuerySchema,
@@ -82,9 +86,34 @@ const createPagination = (total: number, page: number, limit: number) => ({
   hasPreviousPage: page > 1,
 });
 
+const ensureTicketOwnerInScope = (
+  actorRoles: readonly string[],
+  ownerRoles: readonly string[],
+): void => {
+  if (!isSuperAdminRoles(actorRoles) && isStaffRoles(ownerRoles)) {
+    throw new AppError("Only a Super Support Agent can manage staff tickets", 403);
+  }
+};
+
 export const getAdminTasks: RequestHandler = async (request, response) => {
   const query = adminTaskQuerySchema.parse(request.query);
   const filter: QueryFilter<ITask> = {};
+  const superAdmin = isSuperAdminRoles(request.user?.roles ?? []);
+
+  if (!superAdmin) {
+    const protectedOwners = (
+      await User.distinct("_id", {
+        roles: { $in: ["admin", "super_admin"] },
+      })
+    ).map((ownerId) => new mongoose.Types.ObjectId(String(ownerId)));
+    filter.owner = { $nin: protectedOwners };
+    if (
+      query.ownerId &&
+      protectedOwners.some((ownerId) => String(ownerId) === query.ownerId)
+    ) {
+      throw new AppError("Only a Super Support Agent can view staff tickets", 403);
+    }
+  }
 
   if (query.status) {
     filter.status = query.status;
@@ -94,13 +123,48 @@ export const getAdminTasks: RequestHandler = async (request, response) => {
     filter.priority = query.priority;
   }
 
+  if (query.category) {
+    filter.category = query.category;
+  }
+
+  if (query.source) {
+    filter.source = query.source;
+  }
+
+  if (query.attention) {
+    const now = new Date();
+    const attentionFilter: QueryFilter<ITask> =
+      query.attention === "first-response-breached"
+        ? {
+            status: { $ne: "done" },
+            firstRespondedAt: null,
+            firstResponseDueAt: { $lt: now },
+          }
+        : query.attention === "resolution-breached"
+          ? {
+              status: { $ne: "done" },
+              resolutionDueAt: { $lt: now },
+            }
+          : {
+              status: { $ne: "done" },
+              dueDate: { $lt: now },
+            };
+    filter.$and = [attentionFilter];
+  }
+
   if (query.ownerId) {
     filter.owner = new mongoose.Types.ObjectId(query.ownerId);
   }
 
+  if (query.assigneeId) {
+    filter.assignee = new mongoose.Types.ObjectId(query.assigneeId);
+  } else if (query.unassigned === true) {
+    filter.assignee = null;
+  }
+
   if (query.search) {
     const search = new RegExp(escapeRegExp(query.search), "i");
-    filter.$or = [{ title: search }, { description: search }];
+    filter.$or = [{ ticketNumber: search }, { title: search }, { description: search }];
   }
 
   const skip = (query.page - 1) * query.limit;
@@ -109,6 +173,7 @@ export const getAdminTasks: RequestHandler = async (request, response) => {
   const [tasks, total] = await Promise.all([
     Task.find(filter)
       .populate("owner", "firstName lastName email roles profileImage")
+      .populate("assignee", "firstName lastName email roles profileImage")
       .sort({ [query.sortBy]: order, _id: order })
       .skip(skip)
       .limit(query.limit),
@@ -118,40 +183,97 @@ export const getAdminTasks: RequestHandler = async (request, response) => {
   response.status(200).json({
     success: true,
     data: {
-      tasks,
+      tasks: tasks.map(serializeTicket),
       pagination: createPagination(total, query.page, query.limit),
     },
   });
 };
 
-export const getAdminOverview: RequestHandler = async (_request, response) => {
+export const getAdminOverview: RequestHandler = async (request, response) => {
   const now = new Date();
   const todayStart = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
   );
   const weeklyStart = new Date(todayStart);
   weeklyStart.setUTCDate(weeklyStart.getUTCDate() - 6);
+  const superAdmin = isSuperAdminRoles(request.user?.roles ?? []);
+  const protectedOwners = superAdmin
+    ? []
+    : (
+        await User.distinct("_id", {
+          roles: { $in: ["admin", "super_admin"] },
+        })
+      ).map((ownerId) => new mongoose.Types.ObjectId(String(ownerId)));
+  const ticketScope: QueryFilter<ITask> = superAdmin
+    ? {}
+    : { owner: { $nin: protectedOwners } };
+  const ticketFilter = (extra: QueryFilter<ITask> = {}): QueryFilter<ITask> => ({
+    ...ticketScope,
+    ...extra,
+  });
   const [
     totalUsers,
     activeUsers,
-    totalTasks,
-    openTasks,
-    overdueTasks,
+    totalTickets,
+    openTickets,
+    overdueRequestedDeadlines,
+    waitingCustomerTickets,
+    urgentOpenTickets,
+    unassignedTickets,
+    firstResponseBreaches,
+    resolutionBreaches,
+    breachedSlaTickets,
     waitingSupport,
     unansweredContacts,
     bannedUsers,
-    weeklyCompleted,
+    resolvedToday,
+    weeklyResolved,
+    firstResponseTiming,
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ $or: [{ ban: null }, { "ban.isBanned": { $ne: true } }] }),
-    Task.countDocuments(),
-    Task.countDocuments({ status: { $ne: "done" } }),
-    Task.countDocuments({ status: { $ne: "done" }, dueDate: { $lt: now } }),
-    SupportChat.countDocuments({ status: "open" }),
+    Task.countDocuments(ticketScope),
+    Task.countDocuments(ticketFilter({ status: { $ne: "done" } })),
+    Task.countDocuments(ticketFilter({ status: { $ne: "done" }, dueDate: { $lt: now } })),
+    Task.countDocuments(ticketFilter({ status: "waiting-customer" })),
+    Task.countDocuments(ticketFilter({ status: { $ne: "done" }, priority: "urgent" })),
+    Task.countDocuments(ticketFilter({ status: { $ne: "done" }, assignee: null })),
+    Task.countDocuments(
+      ticketFilter({
+        status: { $ne: "done" },
+        firstRespondedAt: null,
+        firstResponseDueAt: { $lt: now },
+      }),
+    ),
+    Task.countDocuments(
+      ticketFilter({
+        status: { $ne: "done" },
+        resolutionDueAt: { $lt: now },
+      }),
+    ),
+    Task.countDocuments(
+      ticketFilter({
+        status: { $ne: "done" },
+        $or: [
+          { firstRespondedAt: null, firstResponseDueAt: { $lt: now } },
+          { resolutionDueAt: { $lt: now } },
+        ],
+      }),
+    ),
+    SupportChat.countDocuments(
+      superAdmin
+        ? { status: "open" }
+        : {
+            status: "open",
+            requiresSuperAdmin: false,
+            origin: { $in: ["user", "guest"] },
+          },
+    ),
     ContactSubmission.countDocuments({ status: "open" }),
     User.countDocuments({ "ban.isBanned": true }),
+    Task.countDocuments(ticketFilter({ completedAt: { $gte: todayStart, $lte: now } })),
     Task.aggregate<{ _id: string; count: number }>([
-      { $match: { completedAt: { $gte: weeklyStart } } },
+      { $match: ticketFilter({ completedAt: { $gte: weeklyStart } }) },
       {
         $group: {
           _id: {
@@ -165,13 +287,34 @@ export const getAdminOverview: RequestHandler = async (_request, response) => {
         },
       },
     ]),
+    Task.aggregate<{ averageMinutes: number }>([
+      {
+        $match: {
+          ...ticketScope,
+          firstRespondedAt: { $type: "date" },
+          createdAt: { $type: "date" },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageMinutes: {
+            $avg: {
+              $divide: [{ $subtract: ["$firstRespondedAt", "$createdAt"] }, 60_000],
+            },
+          },
+        },
+      },
+      { $project: { _id: 0, averageMinutes: 1 } },
+    ]),
   ]);
-  const weeklyMap = new Map(weeklyCompleted.map((entry) => [entry._id, entry.count]));
+  const weeklyMap = new Map(weeklyResolved.map((entry) => [entry._id, entry.count]));
   const weeklyProgress = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(weeklyStart);
     date.setUTCDate(date.getUTCDate() + index);
     const key = date.toISOString().slice(0, 10);
-    return { date: key, completed: weeklyMap.get(key) ?? 0 };
+    const resolved = weeklyMap.get(key) ?? 0;
+    return { date: key, completed: resolved, resolved };
   });
 
   response.status(200).json({
@@ -179,9 +322,21 @@ export const getAdminOverview: RequestHandler = async (_request, response) => {
     data: {
       totalUsers,
       activeUsers,
-      totalTasks,
-      openTasks,
-      overdueTasks,
+      // Legacy names remain until older clients have moved to the ticket names.
+      totalTasks: totalTickets,
+      openTasks: openTickets,
+      overdueTasks: overdueRequestedDeadlines,
+      totalTickets,
+      openTickets,
+      overdueRequestedDeadlines,
+      waitingCustomerTickets,
+      urgentOpenTickets,
+      unassignedTickets,
+      firstResponseBreaches,
+      resolutionBreaches,
+      breachedSlaTickets,
+      resolvedToday,
+      averageFirstResponseMinutes: firstResponseTiming[0]?.averageMinutes ?? null,
       waitingSupport,
       unansweredContacts,
       bannedUsers,
@@ -193,21 +348,30 @@ export const getAdminOverview: RequestHandler = async (_request, response) => {
 export const getAdminUserTasks: RequestHandler = async (request, response) => {
   const userId = validateObjectId(request.params.id, "user");
   const query = adminUserTaskQuerySchema.parse(request.query);
-  const userExists = await User.exists({ _id: userId });
-  if (!userExists) throw new AppError("User not found", 404);
+  const user = await User.findById(userId).select("roles");
+  if (!user) throw new AppError("User not found", 404);
+  ensureTicketOwnerInScope(request.user?.roles ?? [], user.roles);
 
   const filter: QueryFilter<ITask> = { owner: new mongoose.Types.ObjectId(userId) };
   if (query.status) filter.status = query.status;
   if (query.priority) filter.priority = query.priority;
+  if (query.category) filter.category = query.category;
+  if (query.source) filter.source = query.source;
+  if (query.assigneeId) {
+    filter.assignee = new mongoose.Types.ObjectId(query.assigneeId);
+  } else if (query.unassigned === true) {
+    filter.assignee = null;
+  }
   if (query.search) {
     const search = new RegExp(escapeRegExp(query.search), "i");
-    filter.$or = [{ title: search }, { description: search }];
+    filter.$or = [{ ticketNumber: search }, { title: search }, { description: search }];
   }
 
   const skip = (query.page - 1) * query.limit;
   const order: SortOrder = query.order === "asc" ? 1 : -1;
   const [tasks, total] = await Promise.all([
     Task.find(filter)
+      .populate("assignee", "firstName lastName email roles profileImage")
       .sort({ [query.sortBy]: order, _id: order })
       .skip(skip)
       .limit(query.limit),
@@ -216,7 +380,10 @@ export const getAdminUserTasks: RequestHandler = async (request, response) => {
 
   response.status(200).json({
     success: true,
-    data: { tasks, pagination: createPagination(total, query.page, query.limit) },
+    data: {
+      tasks: tasks.map(serializeTicket),
+      pagination: createPagination(total, query.page, query.limit),
+    },
   });
 };
 
@@ -229,12 +396,20 @@ export const getAdminTaskById: RequestHandler = async (request, response) => {
     _id: taskId,
     ...(ownerId && { owner: ownerId }),
   }).populate("owner", "firstName lastName email roles profileImage");
-
-  if (!task) {
-    throw new AppError("Task not found", 404);
+  if (task) {
+    await task.populate("assignee", "firstName lastName email roles profileImage");
   }
 
-  response.status(200).json({ success: true, data: { task } });
+  if (!task) {
+    throw new AppError("Ticket not found", 404);
+  }
+  const populatedOwner = task.owner as unknown as Pick<IUser, "roles">;
+  ensureTicketOwnerInScope(request.user?.roles ?? [], populatedOwner.roles);
+
+  response.status(200).json({
+    success: true,
+    data: { task: serializeTicket(task) },
+  });
 };
 
 export const updateAdminTask: RequestHandler = async (request, response) => {
@@ -244,25 +419,104 @@ export const updateAdminTask: RequestHandler = async (request, response) => {
     : undefined;
 
   if (Object.keys(request.body).length === 0) {
-    throw new AppError("At least one task field must be provided", 400);
+    throw new AppError("At least one ticket field must be provided", 400);
   }
 
   const task = await Task.findOne({ _id: taskId, ...(ownerId && { owner: ownerId }) });
 
   if (!task) {
-    throw new AppError("Task not found", 404);
+    throw new AppError("Ticket not found", 404);
+  }
+
+  const owner = await User.findById(task.owner).select("roles");
+  if (!owner) throw new AppError("Ticket owner not found", 404);
+  ensureTicketOwnerInScope(request.user?.roles ?? [], owner.roles);
+
+  const superAdmin = isSuperAdminRoles(request.user?.roles ?? []);
+  if (!superAdmin && task.assignee && String(task.assignee) !== request.user?.userId) {
+    throw new AppError("This ticket is assigned to another support agent", 403);
+  }
+
+  const changesWorkflow = [
+    "status",
+    "priority",
+    "category",
+    "firstResponseDueAt",
+    "resolutionDueAt",
+  ].some((field) => Object.hasOwn(request.body, field));
+  if (
+    !superAdmin &&
+    changesWorkflow &&
+    (!task.assignee || request.body.assignee === null)
+  ) {
+    request.body.assignee = request.user?.userId;
+  }
+
+  if (request.body.assignee) {
+    const assignee = await User.findById(request.body.assignee).select("roles");
+    if (!assignee || !isStaffRoles(assignee.roles)) {
+      throw new AppError("Ticket assignee must be a support staff member", 400);
+    }
+    if (!superAdmin && String(assignee._id) !== request.user?.userId) {
+      throw new AppError("Support agents may only assign tickets to themselves", 403);
+    }
+  } else if (
+    !superAdmin &&
+    request.body.assignee === null &&
+    task.assignee &&
+    String(task.assignee) !== request.user?.userId
+  ) {
+    throw new AppError("You cannot unassign another support agent's ticket", 403);
+  }
+
+  const changesAssignee =
+    Object.hasOwn(request.body, "assignee") &&
+    String(request.body.assignee ?? "") !== String(task.assignee ?? "");
+  const changesStatus =
+    Object.hasOwn(request.body, "status") && request.body.status !== task.status;
+  if (changesAssignee || changesStatus) {
+    const activeChat = await SupportChat.exists({
+      ticket: task._id,
+      status: { $in: ["assistant", "open", "active"] },
+    });
+    if (activeChat) {
+      throw new AppError(
+        changesAssignee
+          ? "Transfer or end the active support chat before changing the ticket assignee"
+          : "End the active support chat before changing the ticket status",
+        409,
+      );
+    }
   }
 
   applyTaskStatusTransition(task, request.body.status);
+  applyTicketPriorityTransition(
+    task,
+    request.body.priority,
+    {
+      firstResponseDueAt: Object.hasOwn(request.body, "firstResponseDueAt"),
+      resolutionDueAt: Object.hasOwn(request.body, "resolutionDueAt"),
+    },
+    { allowExtension: true, nextStatus: request.body.status },
+  );
   Object.assign(task, request.body);
-  await task.save();
+  task.$where = { updatedAt: task.updatedAt };
+  try {
+    await task.save();
+  } catch (error) {
+    if (error instanceof mongoose.Error.DocumentNotFoundError) {
+      throw new AppError("The ticket changed before your update could be saved", 409);
+    }
+    throw error;
+  }
 
   await task.populate("owner", "firstName lastName email roles profileImage");
+  await task.populate("assignee", "firstName lastName email roles profileImage");
 
   response.status(200).json({
     success: true,
-    message: "Task updated successfully",
-    data: { task },
+    message: "Ticket updated successfully",
+    data: { task: serializeTicket(task) },
   });
 };
 
@@ -271,18 +525,34 @@ export const deleteAdminTask: RequestHandler = async (request, response) => {
   const ownerId = request.params.userId
     ? validateObjectId(request.params.userId, "user")
     : undefined;
-  const task = await Task.findOneAndDelete({
+  const task = await Task.findOne({
     _id: taskId,
     ...(ownerId && { owner: ownerId }),
   });
 
   if (!task) {
-    throw new AppError("Task not found", 404);
+    throw new AppError("Ticket not found", 404);
   }
+
+  const activeChat = await SupportChat.exists({
+    ticket: task._id,
+    status: { $in: ["open", "active"] },
+  });
+  if (activeChat) {
+    throw new AppError("End the linked support chat before deleting this ticket", 409);
+  }
+
+  await Promise.all([
+    task.deleteOne(),
+    SupportChat.updateMany(
+      { ticket: task._id, status: "ended" },
+      { $set: { ticket: null } },
+    ),
+  ]);
 
   response.status(200).json({
     success: true,
-    message: "Task deleted successfully",
+    message: "Ticket deleted successfully",
   });
 };
 
@@ -370,7 +640,7 @@ export const getAdminUserById: RequestHandler = async (request, response) => {
     success: true,
     data: {
       user: serializeUser(user),
-      stats: { taskCount, activeSessionCount },
+      stats: { taskCount, ticketCount: taskCount, activeSessionCount },
     },
   });
 };

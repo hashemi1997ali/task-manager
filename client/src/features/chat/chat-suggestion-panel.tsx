@@ -1,3 +1,5 @@
+import { ArrowUpRight } from "lucide-react";
+
 export function ChatSuggestionPanel({
   suggestions,
   onSelect,
@@ -17,7 +19,8 @@ export function ChatSuggestionPanel({
             onClick={() => onSelect(suggestion)}
             className="focus-ring block min-h-11 w-full whitespace-pre-wrap rounded-[1.25rem] border bg-[var(--surface)] p-4 text-left text-sm leading-6 shadow-[0_8px_24px_rgb(34_28_76_/_0.05)] transition-colors hover:border-[var(--primary)]"
           >
-            {suggestion}
+            <span className="min-w-0 flex-1">{suggestion}</span>
+            <ArrowUpRight className="mt-1 size-4 shrink-0 text-[var(--muted)] transition-colors group-hover:text-[var(--primary)]" />
           </button>
         ))}
       </div>

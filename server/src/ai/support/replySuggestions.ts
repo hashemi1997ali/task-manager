@@ -2,10 +2,13 @@
  * Staff reply-suggestion helper.
  *
  * Generates three short reply suggestions for a human support agent based on
- * the current transcript. Uses the provider chain directly; if no provider is
- * available it returns predefined suggestions so the UI still works offline.
+ * the current transcript. It fails explicitly when no provider can answer;
+ * no local text is presented as an AI-generated result.
  */
 
+import { AppError } from "#utils";
+
+import { aiUnavailableReply } from "../fallback/unavailable.ts";
 import type { AssistantContext } from "../types.ts";
 import { runProviders } from "../providers/index.ts";
 
@@ -21,18 +24,9 @@ export interface StaffWritingContext extends AssistantContext {
   customerRoles: readonly string[];
 }
 
-const fallbackSuggestions = (context: AssistantContext): string[] =>
-  context.locale === "de"
-    ? [
-        "Danke für die Details. Ich prüfe das jetzt für dich.",
-        "Kannst du den letzten Schritt vor dem Problem genauer beschreiben?",
-        "Ich habe den Fall verstanden und erkläre dir gleich die nächsten Schritte.",
-      ]
-    : [
-        "Thanks for the details. I am checking this for you now.",
-        "Could you describe the last step before the problem appeared?",
-        "I understand the case and will explain the next steps now.",
-      ];
+const unavailable = (_context: AssistantContext): never => {
+  throw new AppError(aiUnavailableReply("en"), 503);
+};
 
 export const generateReplySuggestions = async (
   transcript: SupportTranscriptMessage[],
@@ -81,7 +75,7 @@ export const generateReplySuggestions = async (
     if (suggestions.length === 3) return suggestions;
   }
 
-  return fallbackSuggestions(context);
+  return unavailable(context);
 };
 
 export const rewriteStaffDraft = async (
@@ -115,7 +109,7 @@ export const rewriteStaffDraft = async (
     maxTokens: 500,
   });
 
-  return result?.text.trim() || draft;
+  return result?.text.trim() || unavailable(context);
 };
 
 export const generateEmailReplySuggestions = async (
@@ -158,17 +152,7 @@ export const generateEmailReplySuggestions = async (
     if (suggestions.length === 3) return suggestions;
   }
 
-  return context.locale === "de"
-    ? [
-        `Hallo ${recipientName},\n\nvielen Dank für deine Nachricht. Wir prüfen dein Anliegen und melden uns mit den nächsten Schritten bei dir.\n\nViele Grüße\nKarino Support`,
-        `Hallo ${recipientName},\n\nvielen Dank für die Informationen. Bitte sende uns noch die Details zum letzten Schritt vor dem Problem, damit wir dir gezielt helfen können.\n\nViele Grüße\nKarino Support`,
-        `Hallo ${recipientName},\n\nwir haben dein Anliegen verstanden. Wir prüfen die verfügbaren Informationen und erklären dir anschließend das weitere Vorgehen.\n\nViele Grüße\nKarino Support`,
-      ]
-    : [
-        `Hello ${recipientName},\n\nThank you for your message. We are reviewing your request and will follow up with the appropriate next steps.\n\nBest regards,\nKarino Support`,
-        `Hello ${recipientName},\n\nThank you for the information. Could you share the last step you completed before the issue occurred so we can assist you more precisely?\n\nBest regards,\nKarino Support`,
-        `Hello ${recipientName},\n\nWe understand your request. We will review the available information and explain the next steps clearly.\n\nBest regards,\nKarino Support`,
-      ];
+  return unavailable(context);
 };
 
 export const rewriteEmailDraft = async (
@@ -199,5 +183,5 @@ export const rewriteEmailDraft = async (
     maxTokens: 700,
   });
 
-  return result?.text.trim() || draft;
+  return result?.text.trim() || unavailable(context);
 };

@@ -47,7 +47,7 @@ export function PreferencesControls({
     <details className={cn("group relative", className)}>
       <summary
         className={cn(
-          "focus-ring list-none border bg-[var(--surface)] text-[var(--muted)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] [&::-webkit-details-marker]:hidden",
+          "focus-ring list-none border bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] text-[var(--muted)] shadow-[0_6px_18px_rgb(30_35_65_/_0.06)] backdrop-blur transition hover:border-[color-mix(in_srgb,var(--primary)_35%,var(--border))] hover:text-[var(--primary)] [&::-webkit-details-marker]:hidden",
           placement === "sidebar"
             ? "flex h-11 w-full items-center gap-3 rounded-full px-3 text-sm font-semibold"
             : "grid size-11 place-items-center rounded-full",
@@ -66,7 +66,7 @@ export function PreferencesControls({
       </summary>
       <div
         className={cn(
-          "surface-shadow z-[60] rounded-[var(--container-radius)] border bg-[var(--surface)] p-3 text-[var(--foreground)]",
+          "surface-shadow z-[60] rounded-[1.25rem] border bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] p-3.5 text-[var(--foreground)] backdrop-blur-xl",
           placement === "sidebar"
             ? "fixed inset-x-3 bottom-20 w-auto sm:absolute sm:inset-x-auto sm:bottom-12 sm:start-0 sm:w-72"
             : "fixed inset-x-3 top-22 w-auto sm:absolute sm:inset-x-auto sm:end-0 sm:top-12 sm:w-72",
@@ -94,7 +94,7 @@ export function PreferencesControls({
               className={cn(
                 "focus-ring flex h-11 items-center justify-center rounded-full px-3 text-sm font-semibold transition",
                 locale === value
-                  ? "bg-[var(--surface)] text-[var(--primary)] shadow-sm"
+                  ? "bg-[var(--surface)] text-[var(--primary)] shadow-[0_6px_16px_rgb(30_35_65_/_0.08)]"
                   : "text-[var(--muted)] hover:text-[var(--foreground)]",
               )}
               aria-pressed={locale === value}

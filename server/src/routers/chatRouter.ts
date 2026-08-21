@@ -15,6 +15,7 @@ import {
   guestAssistant,
   listOwnChats,
   listStaffChats,
+  openStaffTicketChat,
   rateOwnChat,
   rewriteStaffMessage,
   sendGuestMessage,
@@ -33,8 +34,10 @@ import {
 } from "#middlewares";
 import {
   createChatSchema,
+  createGuestSupportChatSchema,
   createSupportChatSchema,
   guestAssistantSchema,
+  openTicketSupportChatSchema,
   rateChatSchema,
   sendChatMessageSchema,
   rewriteSupportMessageSchema,
@@ -52,7 +55,7 @@ chatRouter.post(
 chatRouter.post(
   "/guest/support",
   guestChatRateLimiter,
-  validateByZod(createSupportChatSchema),
+  validateByZod(createGuestSupportChatSchema),
   createGuestSupportChat,
 );
 chatRouter.post(
@@ -67,6 +70,13 @@ chatRouter.post("/guest/:id/end", guestChatRateLimiter, endGuestChat);
 chatRouter.use(authenticate, requireActiveSession);
 
 chatRouter.get("/staff/queue", requireCurrentStaff, listStaffChats);
+chatRouter.post(
+  "/staff/tickets/:ticketId/open",
+  requireCurrentStaff,
+  authenticatedChatRateLimiter,
+  validateByZod(openTicketSupportChatSchema),
+  openStaffTicketChat,
+);
 chatRouter.post(
   "/staff/:id/claim",
   requireCurrentStaff,

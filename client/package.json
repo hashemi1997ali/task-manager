@@ -2,6 +2,7 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
+  "description": "The responsive Aurora Focus web client for Karino Desk.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
