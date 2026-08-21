@@ -47,10 +47,10 @@ export function ChatMessageBubble({
     >
       <div
         className={cn(
-          "w-fit max-w-[85%] px-3 py-2.5 text-sm leading-5 shadow-sm",
+          "w-fit max-w-[88%] px-4 py-3 text-sm leading-6",
           direction === "outgoing"
-            ? "rounded-2xl rounded-br-sm bg-[var(--primary)] text-[var(--on-primary)]"
-            : "rounded-2xl rounded-bl-sm bg-[var(--surface-muted)] text-[var(--foreground)]",
+            ? "rounded-[1.25rem] rounded-br-md bg-[var(--foreground)] text-[var(--background)] shadow-[0_10px_26px_rgb(12_12_22_/_0.12)]"
+            : "rounded-[1.25rem] rounded-bl-md border bg-[var(--surface)] text-[var(--foreground)] shadow-[0_8px_24px_rgb(34_28_76_/_0.05)]",
         )}
       >
         {name &&

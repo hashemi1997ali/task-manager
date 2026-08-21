@@ -30,7 +30,7 @@ export function AppProviders({
 }: {
   children: ReactNode;
   initialLocale: Locale;
-  initialTheme: ThemePreference;
+  initialTheme: ThemePreference | null;
 }) {
   const [queryClient] = useState(
     () =>

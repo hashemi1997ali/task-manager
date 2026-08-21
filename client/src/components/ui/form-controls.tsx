@@ -12,7 +12,7 @@ import { CircleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const fieldClass =
-  "focus-ring block w-full rounded-[var(--control-radius)] border bg-[var(--surface)] px-3.5 text-base text-[var(--foreground)] placeholder:text-[var(--muted)] focus:border-[var(--primary)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)] sm:text-sm";
+  "focus-ring block w-full rounded-xl border border-[color-mix(in_srgb,var(--foreground)_6%,transparent)] bg-[var(--surface)] px-3.5 text-base text-[var(--foreground)] shadow-sm placeholder:text-[var(--muted)] focus:border-[var(--primary)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)] sm:text-sm";
 const invalidFieldClass =
   "border-rose-400 focus:border-rose-500 focus:shadow-[0_0_0_3px_rgba(244,63,94,.12)] dark:border-rose-400/80";
 

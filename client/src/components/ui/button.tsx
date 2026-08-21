@@ -14,9 +14,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "border border-transparent bg-[var(--primary)] text-[var(--on-primary)] hover:bg-[var(--primary-dark)] active:bg-[var(--primary-dark)] disabled:bg-[var(--primary)]",
+    "border border-[color-mix(in_srgb,var(--foreground)_3%,transparent)] bg-[var(--foreground)] text-[var(--background)] shadow-[0_8px_24px_rgb(0_0_0_/_0.12)] hover:opacity-88 active:opacity-78 disabled:opacity-50",
   secondary:
-    "border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--primary)]/35 hover:bg-[var(--surface-muted)] active:bg-[var(--primary-soft)]",
+    "border border-[color-mix(in_srgb,var(--foreground)_6%,transparent)] bg-[var(--surface)] text-[var(--foreground)] shadow-sm hover:border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:bg-[var(--surface-muted)] active:bg-[var(--surface-muted)]",
   ghost:
     "shadow-none text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]",
   danger:
@@ -40,7 +40,7 @@ export function buttonClassName({
   className?: string;
 } = {}): string {
   return cn(
-    "focus-ring inline-flex items-center justify-center gap-2 rounded-[var(--control-radius)] font-semibold transition-[background-color,border-color,color,opacity] duration-200 disabled:cursor-not-allowed disabled:opacity-50",
+    "focus-ring inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-[background-color,border-color,color,filter,opacity,box-shadow] duration-200 disabled:cursor-not-allowed disabled:opacity-50",
     variants[variant],
     sizes[size],
     className,

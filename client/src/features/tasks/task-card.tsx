@@ -118,6 +118,7 @@ export function TaskCard({
 
   return (
     <Card
+      spotlight={!compact}
       className={cn(
         "relative flex flex-col overflow-hidden transition-colors duration-200 hover:border-[var(--primary)]/50",
         compact ? "min-h-0 p-4" : "min-h-72 p-5",
@@ -181,7 +182,7 @@ export function TaskCard({
             {onDelete && (
               <button
                 onClick={onDelete}
-                className="focus-ring grid size-11 place-items-center rounded-xl text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-500/15 dark:hover:text-rose-300"
+                className="focus-ring grid size-11 place-items-center rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-500/15 dark:hover:text-rose-300"
                 aria-label={`${t.delete}: ${task.title}`}
               >
                 <Trash2 className="size-4" />
@@ -210,7 +211,7 @@ export function TaskCard({
             )}
           </div>
           <div
-            className="grid grid-cols-3 gap-1 rounded-xl bg-[var(--surface-muted)] p-1"
+            className="grid grid-cols-3 gap-1 rounded-full bg-[var(--surface-muted)] p-1"
             role="group"
             aria-label={t.quickStatus}
             aria-busy={statusUpdating || undefined}
@@ -229,7 +230,7 @@ export function TaskCard({
                   aria-pressed={active}
                   aria-label={`${t.setStatus}: ${t.status[nextStatus]}`}
                   className={cn(
-                    "focus-ring flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-xs font-bold transition disabled:cursor-default",
+                    "focus-ring flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-full px-1.5 py-2 text-xs font-bold transition disabled:cursor-default",
                     active
                       ? quickStatusClasses[nextStatus]
                       : "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--foreground)]",

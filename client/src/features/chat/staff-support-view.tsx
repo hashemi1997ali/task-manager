@@ -90,10 +90,10 @@ const copy = {
     takeoverConfirm: "Join and replace",
     superQueue: "Super",
     historyRole: {
-      user: "user",
-      admin: "admin",
-      super_admin: "super admin",
-      guest: "guest",
+      user: "User",
+      admin: "Admin",
+      super_admin: "Super Admin",
+      guest: "Guest",
     },
   },
   de: {
@@ -138,10 +138,10 @@ const copy = {
     takeoverConfirm: "Beitreten und übernehmen",
     superQueue: "Super",
     historyRole: {
-      user: "user",
-      admin: "admin",
-      super_admin: "super admin",
-      guest: "guest",
+      user: "Benutzer",
+      admin: "Admin",
+      super_admin: "Super Admin",
+      guest: "Gast",
     },
   },
 } as const;
@@ -297,7 +297,7 @@ export function StaffSupportView() {
 
   return (
     <>
-      <div className="md:flex md:h-[calc(100dvh-10.25rem)] md:min-h-0 md:flex-col md:overflow-hidden">
+      <div className="md:flex md:h-[calc(100dvh-3rem)] md:min-h-0 md:flex-col md:overflow-hidden lg:h-[calc(100dvh-4rem)]">
         <PageHeading title={t.title} description={t.description} />
 
         {chatsQuery.isPending ? (
@@ -319,7 +319,7 @@ export function StaffSupportView() {
         ) : (
           <div
             className={cn(
-              "mt-5 grid min-h-[38rem] overflow-hidden rounded-[var(--container-radius)] border bg-[var(--surface)] md:min-h-0 md:flex-1 xl:grid-cols-[19rem_minmax(0,1fr)]",
+              "chat-workspace mt-5 grid min-h-[38rem] overflow-hidden rounded-[var(--container-radius)] md:min-h-0 md:flex-1 xl:grid-cols-[18rem_minmax(0,1fr)]",
               threadOpen &&
                 "max-md:fixed max-md:inset-0 max-md:z-50 max-md:mt-0 max-md:h-dvh max-md:min-h-0 max-md:rounded-none max-md:border-0",
             )}
@@ -330,7 +330,7 @@ export function StaffSupportView() {
                 threadOpen ? "max-xl:hidden xl:flex" : "flex",
               )}
             >
-              <div className="flex h-16 shrink-0 items-center border-b px-4">
+              <div className="chat-section-header flex h-16 shrink-0 items-center px-4">
                 <h2 className="text-sm font-semibold">
                   {isSuperAdmin ? t.allHistory : t.supportQueue}
                 </h2>
@@ -471,7 +471,7 @@ export function StaffSupportView() {
                     }
                   />
 
-                  <div className="relative isolate min-h-0 flex-1 overflow-hidden">
+                  <div className="chat-message-stream relative isolate min-h-0 flex-1 overflow-hidden">
                     <div
                       ref={messagesRef}
                       className="absolute inset-0 overflow-y-auto px-4 pb-4"
@@ -520,7 +520,7 @@ export function StaffSupportView() {
                     />
                   </div>
 
-                  <footer className="shrink-0 border-t bg-[var(--surface)] p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                  <footer className="shrink-0 bg-[var(--surface)] p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap gap-2">
                         <Button
@@ -588,7 +588,7 @@ export function StaffSupportView() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-end gap-2 rounded-[var(--control-radius)] border bg-[var(--background)] p-2 focus-within:border-[var(--primary)]">
+                    <div className="chat-composer-shell flex items-end gap-2">
                       <textarea
                         value={message}
                         disabled={!canReply}

@@ -410,17 +410,17 @@ export function ChatWidget() {
           aria-label={t.open}
           title={t.open}
           className={cn(
-            "chat-launcher focus-ring fixed z-40 grid size-14 place-items-center rounded-full border border-white/20 bg-[var(--primary)] text-[var(--on-primary)] shadow-lg transition hover:opacity-90",
+            "chat-launcher focus-ring fixed z-40 grid size-12 place-items-center rounded-full border border-[color-mix(in_srgb,var(--foreground)_6%,transparent)] bg-[color-mix(in_srgb,var(--surface)_84%,transparent)] text-[var(--foreground)]/65 shadow-[0_12px_34px_rgb(26_20_65_/_0.1)] backdrop-blur-xl transition-[background-color,color,border-color,box-shadow] duration-200 hover:border-[color-mix(in_srgb,var(--primary)_28%,transparent)] hover:bg-[var(--surface)] hover:text-[var(--primary)]",
             hasMobileNavigation && "chat-launcher-above-nav",
           )}
         >
-          <MessageCircle className="size-6" />
+          <MessageCircle className="size-5" />
         </button>
       )}
 
       {open && (
-        <section className="chat-panel surface-shadow fixed z-40 flex min-h-0 flex-col overflow-hidden rounded-[var(--container-radius)] border bg-[var(--surface)]">
-          <header className="flex h-16 shrink-0 items-center gap-3 border-b bg-[var(--surface-muted)]/55 px-3 text-[var(--foreground)]">
+        <section className="chat-panel chat-workspace surface-shadow fixed z-40 flex min-h-0 flex-col overflow-hidden rounded-[var(--container-radius)]">
+          <header className="chat-section-header flex h-16 shrink-0 items-center gap-3 px-3 text-[var(--foreground)]">
             <span
               className={avatarFrameClassName("text-[var(--primary)]")}
               aria-label={t.title}
@@ -493,7 +493,7 @@ export function ChatWidget() {
             </div>
           )}
 
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 pb-4">
+          <div className="chat-message-stream flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 pb-4">
             <DateGroupedMessageList
               items={displayMessages}
               formatDate={formatMessageDate}
@@ -538,7 +538,7 @@ export function ChatWidget() {
                     key={score}
                     type="button"
                     onClick={() => setRating(score)}
-                    className="focus-ring grid size-11 place-items-center rounded-xl"
+                    className="focus-ring grid size-11 place-items-center rounded-full"
                     aria-label={`${score}`}
                   >
                     <Star
@@ -572,7 +572,7 @@ export function ChatWidget() {
             </div>
           )}
 
-          <footer className="shrink-0 border-t bg-[var(--surface)] p-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
+          <footer className="shrink-0 bg-[var(--surface)] p-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
             {!activeChat && supportOffer?.available && (
               <div className="mb-3">
                 <Button
@@ -602,7 +602,7 @@ export function ChatWidget() {
                 </Button>
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="chat-composer-shell flex gap-2">
               <Input
                 value={input}
                 disabled={disabledInput}
@@ -616,7 +616,7 @@ export function ChatWidget() {
                 placeholder={
                   disabledInput ? t.ended : isAdmin ? t.staffPlaceholder : t.placeholder
                 }
-                className="min-w-0"
+                className="min-w-0 border-0 bg-transparent shadow-none focus:border-transparent focus:shadow-none"
                 dir="auto"
               />
               <Button

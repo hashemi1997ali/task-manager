@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { Card } from "@/components/ui/card";
+import { Badge, Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { ErrorState, LoadingState } from "@/components/ui/states";
 import { TrendChart } from "@/components/ui/trend-chart";
@@ -139,9 +139,9 @@ export function AdminOverviewView() {
               >
                 <Icon className="size-4 text-[var(--primary)]" />
                 <p className="min-w-0 flex-1 text-sm font-medium">{label}</p>
-                <span className="rounded-full bg-[var(--primary-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--primary)]">
+                <Badge className="border-[var(--primary)]/15 bg-[var(--primary-soft)] text-[var(--primary)]">
                   {formatNumber(value, intlLocale)}
-                </span>
+                </Badge>
               </Link>
             ))}
           </div>

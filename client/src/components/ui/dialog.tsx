@@ -48,7 +48,7 @@ export function Dialog({
             )}
           </div>
           {children}
-          <DialogPrimitive.Close className="focus-ring absolute right-4 top-4 grid size-11 place-items-center rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-white/8">
+          <DialogPrimitive.Close className="focus-ring absolute right-4 top-4 grid size-11 place-items-center rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-white/8">
             <X className="size-4" />
             <span className="sr-only">{locale === "de" ? "Schließen" : "Close"}</span>
           </DialogPrimitive.Close>

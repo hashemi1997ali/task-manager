@@ -40,16 +40,24 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       tabIndex={-1}
       className="grid min-h-dvh bg-[var(--background)] lg:grid-cols-2"
     >
-      <aside className="max-lg:hidden min-h-dvh flex-col bg-[#15151f] px-10 py-10 text-white lg:flex xl:px-16">
-        <Logo inverse />
-        <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center py-12">
-          <h1 className="max-w-lg text-4xl leading-[1.15] font-bold tracking-[-0.035em]">
+      <aside className="relative max-lg:hidden min-h-dvh overflow-hidden flex-col bg-[#080711] px-10 py-10 text-white lg:flex xl:px-16">
+        <div className="pointer-events-none absolute -bottom-32 -left-24 h-[38rem] w-[46rem] rounded-full bg-[#7770db] opacity-55 blur-[110px]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(to_top,#b9b4f0_0%,transparent_100%)] opacity-35" />
+        <div className="relative z-10">
+          <Logo inverse />
+        </div>
+        <div className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col justify-center py-12">
+          <span className="mb-6 inline-flex h-7 w-fit items-center gap-2 rounded-full border border-white/6 bg-white/[.06] px-3 text-xs font-bold text-white/70 backdrop-blur-xl">
+            <Sparkles className="size-3.5 text-[#bbb3ff]" />
+            Karino AI workspace
+          </span>
+          <h1 className="max-w-lg text-5xl leading-[1.02] font-medium tracking-[-0.055em]">
             {t.title}
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-white/70">
             {t.description}
           </p>
-          <div className="mt-12 rounded-[var(--container-radius)] border border-white/15 bg-white/[.055] p-5">
+          <div className="mt-12 rounded-[1.75rem] border border-white/6 bg-black/15 p-5 shadow-[0_28px_90px_rgb(0_0_0_/_0.25)] backdrop-blur-2xl">
             <h2 className="font-semibold">{t.today}</h2>
             <div className="mt-5 space-y-3">
               {t.tasks.map((task, index) => (
@@ -80,7 +88,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
       </aside>
 
-      <section className="flex min-h-dvh flex-col px-4 py-5 sm:px-8 lg:px-14">
+      <section className="relative flex min-h-dvh flex-col overflow-hidden px-4 py-5 sm:px-8 lg:px-14">
+        <div className="pointer-events-none absolute -right-48 top-[-12rem] size-[34rem] rounded-full bg-[var(--primary-soft)] opacity-70 blur-[90px]" />
         <div className="flex items-center justify-between lg:justify-end">
           <div className="lg:hidden">
             <Logo />
@@ -89,13 +98,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <PreferencesControls />
             <Link
               href="/"
-              className="focus-ring rounded-[var(--control-radius)] px-3 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]"
+              className="focus-ring rounded-full px-3 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]"
             >
               {t.home}
             </Link>
           </div>
         </div>
-        <div className="mx-auto flex w-full max-w-lg flex-1 items-center py-10">
+        <div className="relative mx-auto flex w-full max-w-lg flex-1 items-center py-10">
           {children}
         </div>
       </section>

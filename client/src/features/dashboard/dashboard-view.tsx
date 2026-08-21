@@ -207,31 +207,33 @@ export function DashboardView() {
     }).format(new Date(date));
 
   return (
-    <div className="dashboard-page">
-      <header>
-        <h1 className="text-[1.625rem] leading-8 font-bold tracking-[-0.025em]">
-          {t.greetings[getGreetingKey()]}, {user?.firstName}
-        </h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">{t.intro}</p>
-        <time className="sr-only" dateTime={dashboard.generatedAt}>
-          {new Intl.DateTimeFormat(intlLocale, { dateStyle: "full" }).format(
-            new Date(dashboard.generatedAt),
-          )}
-        </time>
+    <div className="desk-reveal space-y-5">
+      <header className="desk-page-header">
+        <div>
+          <h1 className="text-[1.625rem] leading-8 font-bold tracking-[-0.025em]">
+            {t.greetings[getGreetingKey()]}, {user?.firstName}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">{t.intro}</p>
+          <time className="sr-only" dateTime={dashboard.generatedAt}>
+            {new Intl.DateTimeFormat(intlLocale, { dateStyle: "full" }).format(
+              new Date(dashboard.generatedAt),
+            )}
+          </time>
+        </div>
       </header>
 
       <Link
         href="/assistant"
-        className={buttonClassName({ className: "mt-4 flex w-full md:hidden" })}
+        className={buttonClassName({ className: "flex w-full md:hidden" })}
       >
         <Sparkles className="size-4" />
         {t.askAi}
       </Link>
 
-      <section className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {stats.map(({ label, value, icon: Icon }) => (
-          <Card key={label} className="min-h-[7.5rem] p-4">
-            <span className="grid size-9 place-items-center rounded-[9px] bg-[var(--primary-soft)] text-[var(--primary)]">
+          <Card key={label} className="desk-stat min-h-[8rem] rounded-[1.25rem] p-4">
+            <span className="desk-icon-well">
               <Icon className="size-4" aria-hidden="true" />
             </span>
             <p className="mt-3 text-xs font-semibold text-[var(--muted)]">{label}</p>
@@ -240,23 +242,23 @@ export function DashboardView() {
         ))}
       </section>
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(20rem,.85fr)]">
-        <div className="space-y-6">
-          <section>
-            <h2 className="text-sm font-semibold">{t.focus}</h2>
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(20rem,.85fr)]">
+        <div className="space-y-5">
+          <section className="desk-panel overflow-hidden">
+            <h2 className="desk-section-title border-b px-4 py-4 sm:px-5">{t.focus}</h2>
             {dashboard.focusTasks.length === 0 ? (
-              <Card className="mt-3 p-8 text-center text-sm text-[var(--muted)]">
+              <Card className="rounded-none border-0 p-8 text-center text-sm text-[var(--muted)] shadow-none">
                 <CalendarCheck2 className="mx-auto mb-3 size-6 text-[var(--success)]" />
                 {t.noTasks}
               </Card>
             ) : (
-              <div className="mt-3 space-y-2">
+              <div className="divide-y">
                 {dashboard.focusTasks.map((task) => {
                   const taskDateKey = task.dueDate ? dateKeyFor(task.dueDate) : "";
                   return (
                     <Card
                       key={getId(task)}
-                      className="grid min-h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:px-4"
+                      className="grid min-h-20 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 rounded-none border-0 p-3 shadow-none transition-colors hover:bg-[var(--surface-muted)]/65 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:px-5"
                     >
                       <button
                         type="button"
@@ -299,9 +301,9 @@ export function DashboardView() {
             )}
           </section>
 
-          <section>
-            <h2 className="text-sm font-semibold">{t.upcoming}</h2>
-            <Card className="mt-3 grid grid-cols-5 gap-1 p-3 sm:p-5">
+          <section className="desk-panel overflow-hidden">
+            <h2 className="desk-section-title border-b px-4 py-4 sm:px-5">{t.upcoming}</h2>
+            <Card className="grid grid-cols-5 gap-1 rounded-none border-0 p-3 shadow-none sm:p-5">
               {dashboard.upcoming.map((day) => {
                 const date = new Date(`${day.date}T12:00:00Z`);
                 const dateLabel = new Intl.DateTimeFormat(intlLocale, {
@@ -349,9 +351,12 @@ export function DashboardView() {
         </div>
 
         <aside className="space-y-5">
-          <Card className="p-5">
+          <Card className="desk-panel-soft relative overflow-hidden p-5 sm:p-6">
+            <div className="absolute -top-12 -right-12 size-36 rounded-full bg-[var(--primary)]/12 blur-3xl" />
             <div className="flex items-center gap-2">
-              <Bot className="size-5 text-[var(--primary)]" aria-hidden="true" />
+              <span className="desk-icon-well">
+                <Bot className="size-5" aria-hidden="true" />
+              </span>
               <h2 className="text-sm font-semibold">{t.aiBrief}</h2>
             </div>
             <p className="mt-4 min-h-12 text-sm leading-6 text-[var(--muted)]">
@@ -366,7 +371,7 @@ export function DashboardView() {
             </Link>
           </Card>
 
-          <Card className="p-5">
+          <Card className="desk-panel p-5">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-semibold">{t.weekly}</h2>
               <span className="text-xs text-[var(--muted)]">{t.lastSevenDays}</span>

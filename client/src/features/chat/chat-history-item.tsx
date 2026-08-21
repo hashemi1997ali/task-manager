@@ -28,7 +28,7 @@ export function ChatHistoryItem({
     <button
       type="button"
       className={cn(
-        "focus-ring grid h-24 w-full cursor-pointer grid-cols-[minmax(0,1fr)_7rem] grid-rows-2 items-center gap-x-3 border-b px-4 py-3 text-left transition-colors duration-200 last:border-b-0 active:bg-[var(--primary-soft)]/60",
+        "focus-ring grid min-h-24 w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-2 items-center gap-x-3 gap-y-2 border-b px-4 py-3 text-left transition-colors duration-200 active:bg-[var(--primary-soft)]/60",
         selected
           ? "bg-[var(--primary-soft)] text-[var(--foreground)] shadow-[inset_3px_0_0_var(--primary)]"
           : "hover:bg-[color-mix(in_srgb,var(--surface-muted)_78%,var(--primary-soft))]",

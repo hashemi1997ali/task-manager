@@ -117,12 +117,12 @@ export function ContactView() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="paper-grid min-h-[calc(100dvh-5rem)] px-4 py-12 sm:px-6 lg:px-8 lg:py-16"
+        className="min-h-[calc(100dvh-5.75rem)] bg-[radial-gradient(circle_at_78%_8%,var(--primary-glow),transparent_24rem)] px-4 py-12 sm:px-6 lg:px-8 lg:py-16"
       >
         <div className="mx-auto max-w-6xl">
           <div className="max-w-3xl">
             <p className="eyebrow text-[var(--primary)]">{t.eyebrow}</p>
-            <h1 className="mt-4 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-medium tracking-[-0.05em] sm:text-5xl">
               {t.title}
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--muted)] sm:text-base">
@@ -131,10 +131,11 @@ export function ContactView() {
           </div>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-[.85fr_1.15fr]">
-            <div className="grid content-start gap-5">
-              <Card className="p-6">
+            <div className="grid content-start">
+              <Card className="overflow-hidden p-0">
+                <div className="p-6">
                 <div className="flex items-center gap-3">
-                  <span className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]">
+                  <span className="desk-icon-well">
                     <Mail className="size-5" />
                   </span>
                   <div>
@@ -153,8 +154,8 @@ export function ContactView() {
                     )}
                   </div>
                 </div>
-              </Card>
-              <Card className="p-6">
+                </div>
+                <div className="border-t p-6">
                 <p className="text-sm font-black">{t.socials}</p>
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
                   {(configQuery.data?.socials ?? []).map((social) => {
@@ -173,14 +174,20 @@ export function ContactView() {
                     );
                   })}
                 </div>
+                </div>
               </Card>
             </div>
 
-            <Card className="p-5 sm:p-7">
-              <h2 className="text-2xl font-black">{t.formTitle}</h2>
+            <Card className="chat-workspace overflow-hidden p-0">
+              <div className="chat-section-header flex h-16 items-center gap-3 px-5 sm:px-6">
+                <span className="desk-icon-well">
+                  <Send className="size-4" />
+                </span>
+                <h2 className="text-lg font-semibold tracking-[-0.02em]">{t.formTitle}</h2>
+              </div>
               <form
                 onSubmit={handleSubmit((values) => submitMutation.mutate(values))}
-                className="mt-6 grid gap-3"
+                className="chat-message-stream grid gap-3 p-5 sm:p-6"
                 noValidate
               >
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -202,7 +209,7 @@ export function ContactView() {
                 </Field>
                 <Field label={t.message} error={errors.message?.message} compact>
                   <Textarea
-                    className="min-h-40"
+                    className="min-h-40 rounded-[1.25rem] bg-[var(--surface)]"
                     placeholder={t.messagePlaceholder}
                     {...register("message")}
                   />
@@ -211,7 +218,7 @@ export function ContactView() {
                   type="submit"
                   size="lg"
                   loading={submitMutation.isPending}
-                  className="mt-2 w-full sm:w-fit"
+                  className="mt-2 w-full sm:ml-auto sm:w-fit"
                 >
                   <Send className="size-4" />
                   {t.submit}

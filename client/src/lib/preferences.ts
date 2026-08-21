@@ -11,8 +11,8 @@ export type ResolvedTheme = Exclude<ThemePreference, "system">;
 
 export const parseLocale = (value: unknown): Locale => (value === "de" ? "de" : "en");
 
-export const parseThemePreference = (value: unknown): ThemePreference =>
-  value === "light" || value === "dark" ? value : "system";
+export const parseThemePreference = (value: unknown): ThemePreference | null =>
+  value === "light" || value === "dark" || value === "system" ? value : null;
 
 export const getIntlLocale = (locale: Locale): string =>
   locale === "de" ? "de-DE" : "en-US";

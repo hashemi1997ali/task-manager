@@ -105,7 +105,7 @@ export function ResetPasswordForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
-                    className="focus-ring absolute right-0.5 top-0.5 grid size-11 place-items-center rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-white/8"
+                    className="focus-ring absolute right-0.5 top-0.5 grid size-11 place-items-center rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-white/8"
                     aria-label={showPassword ? t.hide : t.show}
                   >
                     {showPassword ? (

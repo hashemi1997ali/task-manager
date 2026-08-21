@@ -1,8 +1,7 @@
-import { Laptop, Moon, Sun } from "lucide-react";
+import { MonitorCog, Moon, Sun } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-
-export type ThemePreference = "light" | "dark" | "system";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import type { ThemePreference } from "@/lib/preferences";
 
 export function ThemeSelector({
   value,
@@ -10,48 +9,32 @@ export function ThemeSelector({
   labels,
   ariaLabel,
   className,
+  compact = false,
+  iconOnly = false,
 }: {
   value: ThemePreference;
   onValueChange: (value: ThemePreference) => void;
   labels: Record<ThemePreference, string>;
   ariaLabel: string;
   className?: string;
+  compact?: boolean;
+  iconOnly?: boolean;
 }) {
   const options = [
-    { value: "light" as const, icon: Sun },
-    { value: "dark" as const, icon: Moon },
-    { value: "system" as const, icon: Laptop },
+    { value: "system" as const, label: labels.system, icon: MonitorCog },
+    { value: "light" as const, label: labels.light, icon: Sun },
+    { value: "dark" as const, label: labels.dark, icon: Moon },
   ];
 
   return (
-    <div
-      className={cn(
-        "grid grid-cols-3 gap-1 rounded-[var(--control-radius)] border bg-[var(--surface-muted)] p-1",
-        className,
-      )}
-      role="group"
-      aria-label={ariaLabel}
-    >
-      {options.map(({ value: option, icon: Icon }) => {
-        const selected = value === option;
-        return (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onValueChange(option)}
-            aria-pressed={selected}
-            className={cn(
-              "focus-ring flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-[calc(var(--control-radius)-0.2rem)] px-2 text-xs font-semibold transition-colors duration-200",
-              selected
-                ? "bg-[var(--surface)] text-[var(--primary)] shadow-sm"
-                : "text-[var(--muted)] hover:bg-[var(--surface)]/60 hover:text-[var(--foreground)]",
-            )}
-          >
-            <Icon className="size-4 shrink-0" aria-hidden="true" />
-            <span className="truncate">{labels[option]}</span>
-          </button>
-        );
-      })}
-    </div>
+    <SegmentedControl
+      value={value}
+      onValueChange={onValueChange}
+      options={options}
+      ariaLabel={ariaLabel}
+      className={className}
+      compact={compact}
+      iconOnly={iconOnly}
+    />
   );
 }

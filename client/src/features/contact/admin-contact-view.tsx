@@ -179,7 +179,7 @@ export function AdminContactView() {
   const threadOpen = mobileThreadOpen || contacts.length === 0;
 
   return (
-    <div className="md:flex md:h-[calc(100dvh-10.25rem)] md:min-h-0 md:flex-col md:overflow-hidden">
+    <div className="md:flex md:h-[calc(100dvh-3rem)] md:min-h-0 md:flex-col md:overflow-hidden lg:h-[calc(100dvh-4rem)]">
       <PageHeading title={t.title} description={t.description} />
 
       {contactsQuery.isPending ? (
@@ -201,7 +201,7 @@ export function AdminContactView() {
       ) : (
         <div
           className={cn(
-            "mt-5 grid min-h-[38rem] overflow-hidden rounded-[var(--container-radius)] border bg-[var(--surface)] md:min-h-0 md:flex-1 xl:grid-cols-[19rem_minmax(0,1fr)]",
+            "mt-5 grid min-h-[38rem] overflow-hidden rounded-[var(--container-radius)] border bg-[var(--surface)] md:min-h-0 md:flex-1 xl:grid-cols-[18rem_minmax(0,1fr)]",
             threadOpen &&
               "max-md:fixed max-md:inset-0 max-md:z-50 max-md:mt-0 max-md:h-dvh max-md:min-h-0 max-md:rounded-none max-md:border-0",
           )}

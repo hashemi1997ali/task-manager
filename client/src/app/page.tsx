@@ -1,393 +1,457 @@
 "use client";
 
 import {
+  ArrowDown,
   ArrowRight,
-  BarChart3,
-  CalendarCheck2,
+  Bot,
   Check,
   CheckCircle2,
   Circle,
-  Layers3,
+  LayoutDashboard,
+  Lightbulb,
+  ListChecks,
   LockKeyhole,
+  Mic,
   Paperclip,
-  TimerReset,
-  Users,
-  Zap,
+  ShieldCheck,
+  Sparkles,
+  WandSparkles,
 } from "lucide-react";
 import Link from "next/link";
 
+import FadeContent from "@/components/FadeContent";
 import { Logo } from "@/components/logo";
+import { FluidHeroBackground } from "@/components/marketing/fluid-hero-background";
 import { PublicHeader } from "@/components/marketing/public-header";
-import { buttonClassName } from "@/components/ui/button";
 import { usePreferences } from "@/providers/preferences-provider";
 
 const copy = {
   en: {
-    heroEyebrow: "AI-powered productivity workspace",
-    heroTitle: "Stay focused.",
-    heroAccent: "Karino handles the rest.",
-    heroDescription:
-      "Karino keeps your tasks, deadlines, and progress in one focused workspace—simple enough for today, powerful enough for every day.",
+    title: "Plan with AI —",
+    description:
+      "Karino brings tasks, deadlines, progress and a personal assistant into one calm workspace built around your day.",
+    prompt: "Ask Karino to plan your day...",
+    promptActions: ["Plan my day", "Prioritize tasks"],
+    disclaimer: "Karino can make mistakes. Review important details.",
     start: "Start for free",
-    viewTasks: "Explore features",
-    benefits: ["Free to start", "Private by design", "Ready on every screen"],
-    live: "Live workspace",
-    today: "Tuesday, July 16",
-    focus: "Today’s focus",
-    focusCount: "3 of 5 tasks",
-    streak: "2 day streak",
-    demoTasks: [
-      { title: "Shape the product story", meta: "09:30 · High", done: true },
-      { title: "Review the API handoff", meta: "13:00 · Medium", done: false },
-      { title: "Plan tomorrow’s sprint", meta: "16:30 · Low", done: false },
+    scroll: "Discover Karino",
+    productEyebrow: "The workspace",
+    productTitle: "Your tasks stay practical.",
+    productAccent: "Your assistant keeps the context.",
+    productDescription:
+      "Plan, update and finish work without moving between disconnected tools. Every view uses the same task data.",
+    workspace: "Today",
+    workspaceMeta: "3 tasks · 1 completed",
+    assistant: "Personal assistant",
+    assistantQuestion: "What should I focus on this afternoon?",
+    assistantAnswer:
+      "Finish the launch review first. It is high priority and due today. I can turn the remaining work into tomorrow’s plan.",
+    tasks: [
+      { title: "Review the launch checklist", meta: "Today · High", done: true },
+      { title: "Prepare the client update", meta: "Today · Medium", done: false },
+      { title: "Plan tomorrow’s focus block", meta: "Tomorrow · Low", done: false },
     ],
-    deepWork: "Focus session",
-    deepWorkTime: "42 min",
-    weekly: "This week",
-    weeklyValue: "76%",
-    featuresEyebrow: "Your day, designed better",
-    featuresTitle: "Everything useful. Nothing noisy.",
+    featuresEyebrow: "Built around real work",
+    featuresTitle: "One clear system, not another layer of noise.",
     featuresDescription:
-      "A focused toolkit that helps you decide what matters, act on it, and see the progress you made.",
+      "The essentials are close when you need them and quiet when you do not.",
     features: [
       {
-        title: "Plan with context",
-        description: "Priorities, due dates, and status stay connected to every task.",
+        title: "Tasks that stay connected",
+        description:
+          "List and board views share status, priority, assignee and dates, so switching views never loses context.",
+        detail: "List · Board · Filters",
       },
       {
-        title: "See momentum",
-        description: "A clean dashboard turns daily work into visible progress.",
+        title: "An assistant that can act",
+        description:
+          "Ask for a plan, refine it in conversation and create the resulting tasks in the same workspace.",
+        detail: "Ask · Refine · Create",
       },
       {
-        title: "Stay in control",
-        description: "Secure sessions let you review and revoke device access anytime.",
+        title: "Control without friction",
+        description:
+          "Manage profile details, active sessions and appearance without interrupting your daily flow.",
+        detail: "Profile · Sessions · Security",
       },
     ],
-    workflowEyebrow: "A tiny ritual that works",
-    workflowTitle: "Capture. Focus. Finish.",
+    workflowEyebrow: "A lighter workflow",
+    workflowTitle: "From a thought to finished work.",
     workflowDescription:
-      "Karino stays out of your way. Add the work, pick the next meaningful step, and close the day with a clear picture of what moved forward.",
+      "Three steps, one source of truth, and no decorative complexity between you and the next action.",
     steps: [
-      "Capture what is on your mind",
-      "Choose the work that matters now",
-      "Finish with visible progress",
+      {
+        title: "Capture",
+        description: "Add the task with the detail you already know. Nothing else is required.",
+      },
+      {
+        title: "Clarify",
+        description: "Use filters or ask the assistant to identify the most useful next step.",
+      },
+      {
+        title: "Finish",
+        description: "Update progress once and see the change everywhere in the workspace.",
+      },
     ],
-    securityTitle: "Security that stays out of your way.",
+    securityEyebrow: "Private by design",
+    securityTitle: "Your workspace remains yours.",
     securityDescription:
-      "Review active devices, revoke individual sessions, or sign out everywhere without weakening your everyday workflow.",
-    securityItems: ["Secure sessions", "Device management", "Remote sign-out"],
-    footer: "Made for clearer days and quieter minds.",
+      "Account controls are built into the product instead of hidden behind support requests.",
+    securityItems: [
+      { title: "Secure sessions", description: "Review every active device and recent use." },
+      { title: "Remote sign-out", description: "Close one session or all other sessions immediately." },
+      { title: "Clear ownership", description: "Personal tasks and assistant history stay tied to your account." },
+    ],
+    ctaTitle: "Start with the next task.",
+    ctaDescription: "Create your workspace and let Karino help organize what comes after it.",
+    cta: "Create your workspace",
+    dashboard: "Open dashboard",
+    footer: "A calmer place for tasks, progress and thoughtful assistance.",
     contact: "Contact",
+    language: "Language",
   },
   de: {
-    heroEyebrow: "Entspannter Dinge erledigen",
-    heroTitle: "Mach aus einem vollen Kopf",
-    heroAccent: "einen klaren Tag.",
-    heroDescription:
-      "Karino bündelt Aufgaben, Termine und Fortschritt in einem fokussierten Arbeitsbereich – einfach für heute, stark für jeden Tag.",
-    start: "Planung starten",
-    viewTasks: "Arbeitsbereich öffnen",
-    benefits: ["Kostenlos starten", "Privat by Design", "Für jeden Bildschirm"],
-    live: "Live-Arbeitsbereich",
-    today: "Dienstag, 16. Juli",
-    focus: "Fokus für heute",
-    focusCount: "3 von 5 Aufgaben",
-    streak: "2 Tage in Folge",
-    demoTasks: [
-      { title: "Produktstory ausarbeiten", meta: "09:30 · Hoch", done: true },
-      { title: "API-Übergabe prüfen", meta: "13:00 · Mittel", done: false },
-      { title: "Sprint für morgen planen", meta: "16:30 · Niedrig", done: false },
+    title: "Plane mit KI —",
+    description:
+      "Karino vereint Aufgaben, Termine, Fortschritt und einen persönlichen Assistenten in einem ruhigen Arbeitsbereich.",
+    prompt: "Frag Karino nach deinem Tagesplan...",
+    promptActions: ["Tag planen", "Aufgaben priorisieren"],
+    disclaimer: "Karino kann Fehler machen. Prüfe wichtige Details.",
+    start: "Kostenlos starten",
+    scroll: "Karino entdecken",
+    productEyebrow: "Der Workspace",
+    productTitle: "Deine Aufgaben bleiben praktisch.",
+    productAccent: "Dein Assistent behält den Kontext.",
+    productDescription:
+      "Plane, aktualisiere und erledige Arbeit ohne getrennte Werkzeuge. Jede Ansicht verwendet dieselben Aufgabendaten.",
+    workspace: "Heute",
+    workspaceMeta: "3 Aufgaben · 1 erledigt",
+    assistant: "Persönlicher Assistent",
+    assistantQuestion: "Worauf sollte ich mich heute Nachmittag konzentrieren?",
+    assistantAnswer:
+      "Schließe zuerst die Launch-Prüfung ab. Sie hat hohe Priorität und ist heute fällig. Den Rest kann ich für morgen planen.",
+    tasks: [
+      { title: "Launch-Checkliste prüfen", meta: "Heute · Hoch", done: true },
+      { title: "Kundenupdate vorbereiten", meta: "Heute · Mittel", done: false },
+      { title: "Fokusblock für morgen planen", meta: "Morgen · Niedrig", done: false },
     ],
-    deepWork: "Fokus-Session",
-    deepWorkTime: "42 Min.",
-    weekly: "Diese Woche",
-    weeklyValue: "76 %",
-    featuresEyebrow: "Dein Tag, besser gestaltet",
-    featuresTitle: "Alles Nützliche. Kein Lärm.",
+    featuresEyebrow: "Für echte Arbeit gebaut",
+    featuresTitle: "Ein klares System statt einer weiteren Schicht Lärm.",
     featuresDescription:
-      "Ein fokussiertes Toolkit, das dir hilft, Wichtiges zu erkennen, umzusetzen und Fortschritt sichtbar zu machen.",
+      "Das Wesentliche ist nah, wenn du es brauchst, und ruhig, wenn du es nicht brauchst.",
     features: [
       {
-        title: "Mit Kontext planen",
+        title: "Aufgaben bleiben verbunden",
         description:
-          "Priorität, Termine, Status und Dateien bleiben direkt bei der Aufgabe.",
+          "Liste und Board teilen Status, Priorität, Nutzer und Termine. Beim Wechsel geht kein Kontext verloren.",
+        detail: "Liste · Board · Filter",
       },
       {
-        title: "Fortschritt sehen",
-        description: "Ein klares Dashboard macht deine tägliche Entwicklung sichtbar.",
+        title: "Ein Assistent, der handeln kann",
+        description:
+          "Bitte um einen Plan, verfeinere ihn im Gespräch und erstelle die Aufgaben im selben Workspace.",
+        detail: "Fragen · Klären · Erstellen",
       },
       {
-        title: "Kontrolle behalten",
+        title: "Kontrolle ohne Reibung",
         description:
-          "Sichere Sitzungen zeigen Gerätezugriffe und lassen sie jederzeit beenden.",
+          "Verwalte Profil, aktive Sitzungen und Darstellung, ohne deinen täglichen Ablauf zu unterbrechen.",
+        detail: "Profil · Sitzungen · Sicherheit",
       },
     ],
-    workflowEyebrow: "Ein kleines Ritual, das funktioniert",
-    workflowTitle: "Erfassen. Fokussieren. Erledigen.",
+    workflowEyebrow: "Ein leichterer Ablauf",
+    workflowTitle: "Vom Gedanken zur erledigten Arbeit.",
     workflowDescription:
-      "Karino bleibt im Hintergrund. Notiere die Arbeit, wähle den nächsten sinnvollen Schritt und beende den Tag mit einem klaren Blick auf deinen Fortschritt.",
+      "Drei Schritte, eine verlässliche Datenquelle und keine dekorative Komplexität vor der nächsten Aktion.",
     steps: [
-      "Gedanken und Aufgaben erfassen",
-      "Jetzt Wichtiges auswählen",
-      "Mit sichtbarem Fortschritt abschließen",
+      {
+        title: "Erfassen",
+        description: "Füge die Aufgabe mit den Details hinzu, die du bereits kennst. Mehr ist nicht nötig.",
+      },
+      {
+        title: "Klären",
+        description: "Nutze Filter oder frage den Assistenten nach dem sinnvollsten nächsten Schritt.",
+      },
+      {
+        title: "Erledigen",
+        description: "Aktualisiere den Fortschritt einmal und sieh die Änderung überall im Workspace.",
+      },
     ],
-    securityTitle: "Sicherheit, die nicht im Weg steht.",
+    securityEyebrow: "Privat by Design",
+    securityTitle: "Dein Workspace bleibt deiner.",
     securityDescription:
-      "Prüfe aktive Geräte, widerrufe einzelne Sitzungen oder melde dich überall ab – ohne deinen Arbeitsfluss zu stören.",
-    securityItems: ["Sichere Sitzungen", "Geräteverwaltung", "Remote-Abmeldung"],
-    footer: "Für klarere Tage und ruhigere Gedanken gemacht.",
+      "Kontoeinstellungen sind direkt im Produkt verfügbar und nicht hinter Support-Anfragen versteckt.",
+    securityItems: [
+      { title: "Sichere Sitzungen", description: "Prüfe jedes aktive Gerät und die letzte Nutzung." },
+      { title: "Remote-Abmeldung", description: "Beende eine oder alle anderen Sitzungen sofort." },
+      { title: "Klare Zuordnung", description: "Aufgaben und Assistent-Verlauf bleiben deinem Konto zugeordnet." },
+    ],
+    ctaTitle: "Beginne mit der nächsten Aufgabe.",
+    ctaDescription: "Erstelle deinen Workspace und lass Karino den Rest mit dir strukturieren.",
+    cta: "Workspace erstellen",
+    dashboard: "Dashboard öffnen",
+    footer: "Ein ruhigerer Ort für Aufgaben, Fortschritt und hilfreiche Unterstützung.",
     contact: "Kontakt",
+    language: "Sprache",
   },
 } as const;
 
-const featureIcons = [Layers3, BarChart3, LockKeyhole] as const;
+const featureIcons = [ListChecks, Bot, ShieldCheck] as const;
 
 export default function HomePage() {
-  const { locale } = usePreferences();
+  const { locale, setLocale } = usePreferences();
   const t = copy[locale];
 
   return (
-    <div className="min-h-dvh overflow-hidden">
-      <PublicHeader />
+    <div className="min-h-dvh overflow-hidden bg-[var(--background)]">
+      <PublicHeader overlay />
       <main id="main-content" tabIndex={-1}>
-        <section className="border-b">
-          <div className="mx-auto grid max-w-[78rem] items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:px-8">
-            <div>
-              <span className="inline-flex rounded-full bg-[var(--primary-soft)] px-3 py-2 text-xs font-semibold text-[var(--primary)]">
-                {t.heroEyebrow}
+        <section className="relative min-h-dvh w-full overflow-hidden bg-[var(--background)] text-[#151522] dark:text-white">
+          <FluidHeroBackground />
+
+          <FadeContent
+            duration={360}
+            threshold={0.04}
+            className="relative z-10 mx-auto flex min-h-dvh max-w-4xl flex-col items-start justify-start gap-0 px-4 pb-0 pt-[16.7rem] sm:py-0 sm:pt-40 lg:px-8 lg:pt-[17rem]"
+          >
+            <h1 className="max-w-full text-[2rem] leading-[1.15] font-medium tracking-[-0.045em] sm:text-5xl sm:leading-none md:text-6xl lg:text-7xl">
+              <span className="block">{t.title}</span>
+              <span className="block whitespace-nowrap">
+                {locale === "en" ? "the " : "die "}
+                <em className="font-medium italic text-[#242536]/80 dark:text-white/70">
+                  {locale === "en" ? "future" : "Zukunft"}
+                </em>{" "}
+                {locale === "en" ? "of productivity" : "der Arbeit"}
               </span>
-              <h1 className="text-balance mt-7 max-w-2xl text-4xl leading-[1.08] font-bold tracking-[-0.04em] text-[var(--foreground)] sm:text-5xl">
-                {t.heroTitle} <span>{t.heroAccent}</span>
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-7 text-[var(--muted)]">
-                {t.heroDescription}
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/register" className={buttonClassName({ size: "md" })}>
-                  {t.start}
-                  <ArrowRight className="size-4" />
-                </Link>
-                <Link
-                  href="#features"
-                  className={buttonClassName({ variant: "secondary", size: "md" })}
-                >
-                  {t.viewTasks}
-                </Link>
+            </h1>
+
+            <div className="hero-prompt mt-7 w-full rounded-[2rem] bg-[#f9f9fc] p-3 text-left shadow-[0_16px_60px_rgb(39_48_100_/_0.12)] sm:mt-16">
+              <div className="min-h-[5.7rem] px-4 py-3 text-base text-[#959bad]">
+                {t.prompt}
               </div>
-              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3 text-xs text-[var(--muted)]">
-                {t.benefits.map((item) => (
-                  <span key={item} className="inline-flex items-center gap-2">
-                    <Check className="size-4 text-[var(--success)]" strokeWidth={3} />
-                    {item}
+              <div className="flex items-center gap-2">
+                <span aria-hidden="true" className="hero-prompt-control grid size-12 shrink-0 place-items-center rounded-full bg-white text-[#9299aa]">
+                  <Paperclip className="size-4" />
+                </span>
+                <span aria-hidden="true" className="hero-prompt-control grid size-12 shrink-0 place-items-center rounded-full bg-white text-[#7f8798]">
+                  <Lightbulb className="size-4" />
+                </span>
+                {t.promptActions.map((action) => (
+                  <span key={action} className="hero-prompt-control hidden h-12 items-center gap-2 rounded-full bg-white px-5 text-sm text-[#737b8d] sm:inline-flex">
+                    <WandSparkles className="size-4" />
+                    {action}
                   </span>
                 ))}
+                <span className="flex-1" />
+                <span aria-hidden="true" className="hero-prompt-control hidden size-12 shrink-0 place-items-center rounded-full bg-white text-[#737b8d] sm:grid">
+                  <Mic className="size-4" />
+                </span>
+                <Link href="/assistant" aria-label={t.start} className="focus-ring grid size-12 shrink-0 place-items-center rounded-full bg-[#03040a] text-white transition-colors hover:bg-[#1a1b22]">
+                  <ArrowRight className="size-4" />
+                </Link>
               </div>
             </div>
+            <p className="mt-5 w-full text-center text-xs text-[#151728]/60 dark:text-white/55">
+              {t.disclaimer}
+            </p>
 
-            <div className="mx-auto w-full max-w-2xl rounded-[1.5rem] bg-[var(--surface-strong)] p-4">
-              <div className="rounded-[var(--container-radius)] bg-[var(--surface)] p-4 text-[var(--foreground)] sm:p-5">
-                <div className="flex items-center justify-between border-b border-white/10 pb-5">
-                  <div className="flex items-center gap-3">
-                    <span className="grid size-10 place-items-center rounded-2xl bg-[var(--primary)]">
-                      <CalendarCheck2 className="size-5" />
-                    </span>
-                    <div>
-                      <p className="text-xs font-extrabold tracking-[.14em] text-white/70 uppercase">
-                        {t.live}
-                      </p>
-                      <p className="mt-0.5 text-sm font-bold">{t.today}</p>
-                    </div>
-                  </div>
-                  <span className="flex gap-1.5" aria-hidden="true">
-                    <i className="size-2 rounded-full bg-[var(--primary)]" />
-                    <i className="size-2 rounded-full bg-[var(--highlight)]" />
-                    <i className="size-2 rounded-full bg-white/25" />
-                  </span>
-                </div>
-
-                <div className="mt-6 flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-sm text-white/70">{t.focus}</p>
-                    <h2 className="mt-1 text-2xl font-black tracking-tight">
-                      {t.focusCount}
-                    </h2>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-full bg-white/8 px-3 py-2 text-xs font-bold text-[var(--highlight)]">
-                    <Zap className="size-3.5" /> {t.streak}
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-3">
-                  {t.demoTasks.map((task) => (
-                    <div
-                      key={task.title}
-                      className="flex items-center gap-3 rounded-[1.25rem] border border-white/10 bg-white/[.045] p-3.5"
-                    >
-                      <span
-                        className={`grid size-9 shrink-0 place-items-center rounded-xl ${task.done ? "bg-[var(--highlight)] text-[var(--on-highlight)]" : "bg-white/7 text-white/70"}`}
-                      >
-                        {task.done ? (
-                          <CheckCircle2 className="size-5" />
-                        ) : (
-                          <Circle className="size-5" />
-                        )}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold">{task.title}</p>
-                        <p className="mt-1 text-xs text-white/70">{task.meta}</p>
-                      </div>
-                      <span className="size-2 rounded-full bg-[var(--primary)]" />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-[1.4rem] bg-[var(--primary)] p-4">
-                    <TimerReset className="size-5" />
-                    <p className="mt-5 text-xs font-semibold text-white/70">
-                      {t.deepWork}
-                    </p>
-                    <p className="mt-1 text-xl font-black">{t.deepWorkTime}</p>
-                  </div>
-                  <div className="rounded-[1.4rem] bg-[var(--highlight)] p-4 text-[var(--on-highlight)]">
-                    <BarChart3 className="size-5" />
-                    <p className="mt-5 text-xs font-semibold text-black/55">{t.weekly}</p>
-                    <p className="mt-1 text-xl font-black">{t.weeklyValue}</p>
-                  </div>
-                </div>
-              </div>
+            <div className="mt-auto flex w-full items-end justify-between gap-6 pb-5 text-[#151522]/60 dark:text-white/60 sm:pb-24">
+              <p className="max-w-sm text-sm leading-5">{t.description}</p>
+              <a href="#product" className="focus-ring grid size-12 shrink-0 place-items-center rounded-full transition-colors hover:text-[#151522] dark:hover:text-white" aria-label={t.scroll}>
+                <ArrowDown className="size-8" strokeWidth={1.25} />
+              </a>
             </div>
-          </div>
+          </FadeContent>
         </section>
 
-        <section id="features" className="py-20 sm:py-28">
-          <div className="mx-auto max-w-[88rem] px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-8 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
-              <div>
+        <section id="product" className="border-b py-16 sm:py-20">
+          <FadeContent duration={400} ease="power3.out" threshold={0.14} className="mx-auto max-w-[76rem] px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
+              <div className="lg:col-span-7">
+                <p className="eyebrow text-[var(--primary)]">{t.productEyebrow}</p>
+                <h2 className="text-balance mt-4 text-4xl leading-[1.04] font-medium tracking-[-0.05em] sm:text-5xl">
+                  {t.productTitle}{" "}
+                  <span className="text-[var(--muted)]">{t.productAccent}</span>
+                </h2>
+              </div>
+              <p className="max-w-xl text-base leading-7 text-[var(--muted)] lg:col-span-4 lg:col-start-9">
+                {t.productDescription}
+              </p>
+            </div>
+
+            <div className="mt-10 overflow-hidden rounded-2xl border bg-[var(--surface)] shadow-[0_24px_70px_rgb(27_24_62_/_0.06)] dark:shadow-none">
+                <div className="flex items-center justify-between border-b px-4 py-3 sm:px-5">
+                  <div>
+                    <p className="text-sm font-semibold">{t.workspace}</p>
+                    <p className="mt-0.5 text-xs text-[var(--muted)]">{t.workspaceMeta}</p>
+                  </div>
+                  <span className="inline-flex items-center gap-2 text-xs text-[var(--muted)]">
+                    <span className="size-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                    Live
+                  </span>
+                </div>
+                <div className="grid lg:grid-cols-[1.05fr_.95fr]">
+                  <div className="p-4 sm:p-6 lg:border-r">
+                    <div className="grid gap-2">
+                      {t.tasks.map((task) => (
+                        <div key={task.title} className="flex min-h-16 items-center gap-3 rounded-xl border px-3.5 py-3">
+                          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface-muted)] text-[var(--muted)]">
+                            {task.done ? <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" /> : <Circle className="size-5" />}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold">{task.title}</p>
+                            <p className="mt-1 text-xs text-[var(--muted)]">{task.meta}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex min-h-80 flex-col bg-[color-mix(in_srgb,var(--surface-muted)_58%,var(--surface))] p-4 sm:p-6">
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <Bot className="size-4.5 text-[var(--primary)]" />
+                      {t.assistant}
+                    </div>
+                    <p className="mt-6 max-w-[90%] self-end rounded-xl bg-[var(--foreground)] px-4 py-3 text-sm leading-6 text-[var(--background)]">
+                      {t.assistantQuestion}
+                    </p>
+                    <p className="mt-3 max-w-[92%] rounded-xl border bg-[var(--surface)] px-4 py-3 text-sm leading-6 text-[var(--muted)]">
+                      {t.assistantAnswer}
+                    </p>
+                    <div className="mt-auto flex items-center gap-2 border-t pt-4 text-xs text-[var(--muted)]">
+                      <Sparkles className="size-4 text-[var(--primary)]" />
+                      {locale === "de" ? "Antwort mit deinem Workspace-Kontext" : "Answer grounded in your workspace context"}
+                    </div>
+                  </div>
+                </div>
+            </div>
+          </FadeContent>
+        </section>
+
+        <section id="features" className="py-16 sm:py-20">
+          <FadeContent duration={400} ease="power3.out" threshold={0.12} className="mx-auto max-w-[76rem] px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-8 lg:grid-cols-12">
+              <div className="lg:col-span-6">
                 <p className="eyebrow text-[var(--primary)]">{t.featuresEyebrow}</p>
-                <h2 className="text-balance mt-4 max-w-2xl text-4xl leading-[1] font-black tracking-[-0.05em] text-[var(--foreground)] sm:text-6xl">
+                <h2 className="text-balance mt-4 text-4xl leading-[1.04] font-medium tracking-[-0.05em] sm:text-5xl">
                   {t.featuresTitle}
                 </h2>
               </div>
-              <p className="max-w-xl text-base leading-8 text-[var(--muted)] lg:justify-self-end">
+              <p className="max-w-lg text-base leading-7 text-[var(--muted)] lg:col-span-4 lg:col-start-9 lg:pt-7">
                 {t.featuresDescription}
               </p>
             </div>
 
-            <div className="mt-12 grid gap-4 md:grid-cols-3">
-              {t.features.map(({ title, description }, index) => {
+            <dl className="mt-10 grid border-y md:grid-cols-3 md:divide-x">
+              {t.features.map((feature, index) => {
                 const Icon = featureIcons[index];
                 return (
-                  <article
-                    key={title}
-                    className={`group relative min-h-72 overflow-hidden rounded-[var(--container-radius)] border p-6 transition-colors duration-200 ${index === 0 ? "bg-[var(--highlight)] text-[var(--on-highlight)]" : index === 1 ? "bg-[var(--surface)]" : "bg-[var(--surface-strong)] text-white"}`}
-                  >
-                    <span
-                      className={`grid size-12 place-items-center rounded-2xl border ${index === 0 ? "border-black/10 bg-black/5" : index === 2 ? "border-white/10 bg-white/8 text-[var(--highlight)]" : "bg-[var(--primary-soft)] text-[var(--primary)]"}`}
-                    >
-                      <Icon className="size-5" />
-                    </span>
-                    <div className="absolute inset-x-6 bottom-6">
-                      <h3 className="text-xl font-black tracking-tight">{title}</h3>
-                      <p
-                        className={`mt-2 text-sm leading-7 ${index === 0 ? "text-black/70" : index === 2 ? "text-white/70" : "text-[var(--muted)]"}`}
-                      >
-                        {description}
-                      </p>
+                  <div key={feature.title} className="border-b py-7 last:border-b-0 md:border-b-0 md:px-7 md:first:pl-0 md:last:pr-0">
+                    <div className="flex items-center justify-between">
+                      <Icon className="size-5 text-[var(--primary)]" aria-hidden="true" />
+                      <dd className="text-xs font-medium text-[var(--muted)]">{feature.detail}</dd>
                     </div>
-                    {index === 1 && (
-                      <div
-                        className="absolute right-5 top-5 flex h-24 items-end gap-1.5 opacity-45"
-                        aria-hidden="true"
-                      >
-                        {[44, 68, 52, 82, 64].map((height) => (
-                          <i
-                            key={height}
-                            className="w-3 rounded-full bg-[var(--primary)]"
-                            style={{ height }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </article>
+                    <dt className="mt-8 text-lg font-semibold tracking-[-0.02em]">{feature.title}</dt>
+                    <dd className="mt-3 text-sm leading-6 text-[var(--muted)]">{feature.description}</dd>
+                  </div>
                 );
               })}
+            </dl>
+            <div id="workflow" className="mt-14 grid border-y bg-[var(--surface-muted)] lg:grid-cols-[.8fr_1.2fr]">
+              <div className="border-b p-6 sm:p-8 lg:border-r lg:border-b-0">
+                <p className="eyebrow text-[var(--primary)]">{t.workflowEyebrow}</p>
+                <h2 className="text-balance mt-4 text-3xl font-medium tracking-[-0.045em] sm:text-4xl">{t.workflowTitle}</h2>
+                <p className="mt-4 max-w-md text-sm leading-6 text-[var(--muted)]">{t.workflowDescription}</p>
+              </div>
+              <ol className="divide-y px-6 sm:px-8">
+                {t.steps.map((step, index) => (
+                  <li key={step.title} className="grid gap-2 py-5 sm:grid-cols-[2.5rem_8rem_1fr] sm:items-start sm:gap-4">
+                    <span className="text-xs font-semibold text-[var(--primary)]">0{index + 1}</span>
+                    <h3 className="font-semibold tracking-[-0.02em]">{step.title}</h3>
+                    <p className="text-sm leading-6 text-[var(--muted)]">{step.description}</p>
+                  </li>
+                ))}
+              </ol>
             </div>
-          </div>
+          </FadeContent>
         </section>
 
-        <section id="security" className="border-y bg-[var(--surface)] py-16 sm:py-20">
-          <div className="mx-auto grid max-w-[88rem] gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:px-8">
-            <div>
-              <LockKeyhole className="size-7 text-[var(--primary)]" />
-              <h2 className="mt-4 text-3xl font-bold tracking-[-0.03em]">
-                {t.securityTitle}
-              </h2>
-              <p className="mt-3 max-w-xl leading-7 text-[var(--muted)]">
-                {t.securityDescription}
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {t.securityItems.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-[var(--container-radius)] border bg-[var(--background)] p-5"
-                >
-                  <CheckCircle2 className="size-5 text-[var(--success)]" />
-                  <p className="mt-4 text-sm font-semibold">{item}</p>
+        <section id="security" className="border-t py-16 sm:py-20">
+          <FadeContent duration={400} ease="power3.out" threshold={0.12} className="mx-auto max-w-[76rem] px-4 sm:px-6 lg:px-8">
+            <div className="grid overflow-hidden rounded-2xl border bg-[var(--surface)] lg:grid-cols-[1.05fr_.95fr]">
+              <div className="p-6 sm:p-8 lg:p-10">
+                <div className="flex items-center gap-3 text-[var(--primary)]">
+                  <LockKeyhole className="size-5" aria-hidden="true" />
+                  <p className="eyebrow">{t.securityEyebrow}</p>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="workflow" className="py-20 sm:py-28">
-          <div className="mx-auto max-w-[88rem] px-4 sm:px-6 lg:px-8">
-            <div className="paper-grid overflow-hidden rounded-[var(--container-radius)] border bg-[var(--primary)] p-6 text-[var(--on-primary)] shadow-lg sm:p-10 lg:p-14">
-              <div className="grid gap-12 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
-                <div>
-                  <span className="eyebrow text-white/65">
-                    <Users className="size-4" />
-                    {t.workflowEyebrow}
-                  </span>
-                  <h2 className="mt-5 text-4xl leading-none font-black tracking-[-0.05em] sm:text-6xl">
-                    {t.workflowTitle}
-                  </h2>
-                  <p className="mt-5 max-w-xl leading-8 text-white/75">
-                    {t.workflowDescription}
-                  </p>
-                </div>
-                <ol className="grid gap-3">
-                  {t.steps.map((item, index) => (
-                    <li
-                      key={item}
-                      className="flex items-center gap-4 rounded-[1.4rem] border border-white/15 bg-black/10 p-4 backdrop-blur"
-                    >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--highlight)] font-black text-[var(--on-highlight)]">
-                        {index + 1}
-                      </span>
-                      <span className="font-bold">{item}</span>
-                      <ArrowRight className="ml-auto size-4 text-white/70" />
-                    </li>
+                <h2 className="text-balance mt-5 text-3xl font-medium tracking-[-0.045em] sm:text-4xl">{t.securityTitle}</h2>
+                <p className="mt-4 max-w-lg leading-7 text-[var(--muted)]">{t.securityDescription}</p>
+                <div className="mt-7 grid gap-4 sm:grid-cols-3">
+                  {t.securityItems.map((item) => (
+                    <div key={item.title} className="border-t pt-4">
+                      <div className="flex items-center gap-2">
+                        <Check className="size-4 shrink-0 text-[var(--primary)]" aria-hidden="true" />
+                        <h3 className="text-sm font-semibold">{item.title}</h3>
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{item.description}</p>
+                    </div>
                   ))}
-                </ol>
+                </div>
+              </div>
+              <div className="flex flex-col justify-between bg-[#16151e] p-6 text-white sm:p-8 lg:p-10 dark:bg-[#1b1928]">
+                <div>
+                  <Sparkles className="size-6 text-[#aaa1ff]" aria-hidden="true" />
+                  <h2 className="mt-8 text-3xl font-medium tracking-[-0.045em] sm:text-4xl">{t.ctaTitle}</h2>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-white/65">{t.ctaDescription}</p>
+                </div>
+                <div className="mt-10 flex flex-wrap gap-2">
+                  <Link href="/register" className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#ffffff] px-6 text-sm font-semibold text-[#16151e] transition-colors hover:bg-[#efeff7]">
+                    {t.cta}
+                    <ArrowRight className="size-4" />
+                  </Link>
+                  <Link href="/dashboard" className="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/6 px-5 text-sm font-semibold transition-colors hover:bg-white/10">
+                    <LayoutDashboard className="size-4" />
+                    {t.dashboard}
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          </FadeContent>
         </section>
       </main>
 
-      <footer className="border-t bg-[var(--surface)]">
-        <div className="mx-auto flex max-w-[88rem] flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row sm:px-6 lg:px-8">
-          <Logo />
-          <div className="flex flex-col items-center gap-2 sm:items-start">
-            <p className="text-sm text-[var(--muted)]">{t.footer}</p>
-            <Link href="/contact" className="text-sm font-bold text-[var(--primary)]">
-              {t.contact}
-            </Link>
+      <footer className="border-t">
+        <div className="mx-auto flex max-w-[76rem] flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
+          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+            <Logo />
+            <p className="max-w-md text-sm leading-6 text-[var(--muted)]">{t.footer}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/contact" className="focus-ring rounded-lg text-sm font-semibold text-[var(--primary)]">{t.contact}</Link>
+              <div
+                className="flex items-center rounded-full border bg-[var(--surface-muted)] p-1"
+                role="group"
+                aria-label={t.language}
+              >
+                {(["en", "de"] as const).map((language) => (
+                  <button
+                    key={language}
+                    type="button"
+                    onClick={() => setLocale(language)}
+                    aria-pressed={locale === language}
+                    className={`focus-ring min-h-11 min-w-12 rounded-full px-3 text-xs font-semibold uppercase transition-colors ${
+                      locale === language
+                        ? "bg-[var(--surface)] text-[var(--foreground)] shadow-sm"
+                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    {language}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs font-bold text-[var(--muted)]">
-            <Paperclip className="size-3.5" /> Karino 2026
+          <div className="flex items-center justify-between border-t pt-6 text-xs text-[var(--muted)]">
+            <span>© 2026 Karino</span>
+            <span>Plan · Focus · Finish</span>
           </div>
         </div>
       </footer>

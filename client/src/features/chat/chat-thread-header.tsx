@@ -25,7 +25,7 @@ export function ChatThreadHeader({
   hideBack?: boolean;
 }) {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-[var(--surface-muted)]/55 px-2 sm:gap-3 sm:px-4">
+    <header className="chat-section-header flex h-16 shrink-0 items-center gap-2 px-2 sm:gap-3 sm:px-4">
       <ChatIconButton
         bare
         className={cn("xl:hidden", hideBack && "invisible")}

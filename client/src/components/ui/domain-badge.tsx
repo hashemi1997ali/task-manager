@@ -4,7 +4,7 @@ import type { TaskPriority, TaskStatus, UserRole } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const base =
-  "inline-flex h-7 w-fit shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-2.5 text-xs font-semibold leading-none";
+  "inline-flex h-7 w-fit shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-3 text-xs font-bold leading-none";
 
 const taskStatusClasses: Record<TaskStatus, string> = {
   todo: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-500/25 dark:bg-slate-500/15 dark:text-slate-300",

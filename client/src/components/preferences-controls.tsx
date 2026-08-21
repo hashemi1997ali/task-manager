@@ -49,8 +49,8 @@ export function PreferencesControls({
         className={cn(
           "focus-ring list-none border bg-[var(--surface)] text-[var(--muted)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] [&::-webkit-details-marker]:hidden",
           placement === "sidebar"
-            ? "flex h-11 w-full items-center gap-3 rounded-[10px] px-3 text-sm font-semibold"
-            : "grid size-11 place-items-center rounded-[var(--control-radius)]",
+            ? "flex h-11 w-full items-center gap-3 rounded-full px-3 text-sm font-semibold"
+            : "grid size-11 place-items-center rounded-full",
         )}
         aria-label={t.open}
         title={t.title}
@@ -77,7 +77,7 @@ export function PreferencesControls({
           {t.language}
         </div>
         <div
-          className="grid grid-cols-2 gap-1 rounded-[12px] bg-[var(--surface-muted)] p-1"
+          className="grid grid-cols-2 gap-1 rounded-full bg-[var(--surface-muted)] p-1"
           role="group"
           aria-label={t.language}
         >
@@ -92,7 +92,7 @@ export function PreferencesControls({
               type="button"
               onClick={() => setLocale(value)}
               className={cn(
-                "focus-ring flex h-11 items-center justify-center rounded-[9px] px-3 text-sm font-semibold transition",
+                "focus-ring flex h-11 items-center justify-center rounded-full px-3 text-sm font-semibold transition",
                 locale === value
                   ? "bg-[var(--surface)] text-[var(--primary)] shadow-sm"
                   : "text-[var(--muted)] hover:text-[var(--foreground)]",

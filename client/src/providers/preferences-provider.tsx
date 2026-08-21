@@ -8,7 +8,6 @@ import {
   useEffect,
   useMemo,
   useState,
-  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -37,42 +36,18 @@ const prefersDark = (): boolean =>
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-color-scheme: dark)").matches;
 
-const resolveTheme = (theme: ThemePreference): ResolvedTheme =>
-  theme === "system" ? (prefersDark() ? "dark" : "light") : theme;
-
 const applyTheme = (theme: ThemePreference): ResolvedTheme => {
-  const resolved = resolveTheme(theme);
   const root = document.documentElement;
-  root.classList.toggle("dark", resolved === "dark");
+  const resolvedTheme: ResolvedTheme =
+    theme === "system" ? (prefersDark() ? "dark" : "light") : theme;
+  root.classList.toggle("dark", resolvedTheme === "dark");
   root.dataset.theme = theme;
-  root.style.colorScheme = resolved;
-  return resolved;
+  root.style.colorScheme = resolvedTheme;
+  return resolvedTheme;
 };
-
-const subscribeToSystemTheme = (onStoreChange: () => void): (() => void) => {
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
-  media.addEventListener("change", onStoreChange);
-  return () => media.removeEventListener("change", onStoreChange);
-};
-
-const getSystemThemeSnapshot = (): boolean => prefersDark();
-const getServerSystemThemeSnapshot = (): boolean => false;
-const THEME_CHANGE_EVENT = "karino-theme-change";
 
 const isThemePreference = (value: string | null): value is ThemePreference =>
   value === "light" || value === "dark" || value === "system";
-
-const subscribeToThemePreference = (onStoreChange: () => void): (() => void) => {
-  const handleStorage = (event: StorageEvent) => {
-    if (event.key === THEME_STORAGE_KEY) onStoreChange();
-  };
-  window.addEventListener("storage", handleStorage);
-  window.addEventListener(THEME_CHANGE_EVENT, onStoreChange);
-  return () => {
-    window.removeEventListener("storage", handleStorage);
-    window.removeEventListener(THEME_CHANGE_EVENT, onStoreChange);
-  };
-};
 
 export function PreferencesProvider({
   children,
@@ -81,38 +56,52 @@ export function PreferencesProvider({
 }: {
   children: ReactNode;
   initialLocale: Locale;
-  initialTheme: ThemePreference;
+  initialTheme: ThemePreference | null;
 }) {
   const router = useRouter();
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
-  const getThemeSnapshot = useCallback((): ThemePreference => {
-    try {
-      const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-      return isThemePreference(storedTheme) ? storedTheme : initialTheme;
-    } catch {
-      return initialTheme;
-    }
-  }, [initialTheme]);
-  const getServerThemeSnapshot = useCallback(
-    (): ThemePreference => initialTheme,
-    [initialTheme],
+  const [theme, setThemeState] = useState<ThemePreference>(initialTheme ?? "system");
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(
+    initialTheme === "dark" ? "dark" : "light",
   );
-  const theme = useSyncExternalStore(
-    subscribeToThemePreference,
-    getThemeSnapshot,
-    getServerThemeSnapshot,
-  );
-  const systemDark = useSyncExternalStore(
-    subscribeToSystemTheme,
-    getSystemThemeSnapshot,
-    getServerSystemThemeSnapshot,
-  );
-  const resolvedTheme: ResolvedTheme =
-    theme === "system" ? (systemDark ? "dark" : "light") : theme;
 
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme, systemDark]);
+    let storedTheme: ThemePreference | null = null;
+    try {
+      const storedValue = localStorage.getItem(THEME_STORAGE_KEY);
+      if (isThemePreference(storedValue)) storedTheme = storedValue;
+    } catch {
+      // Fall through to the cookie or the current OS preference.
+    }
+
+    const nextTheme = storedTheme ?? initialTheme ?? "system";
+    const nextResolvedTheme = applyTheme(nextTheme);
+    queueMicrotask(() => setThemeState(nextTheme));
+    queueMicrotask(() => setResolvedTheme(nextResolvedTheme));
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== THEME_STORAGE_KEY) return;
+      const nextSyncedTheme = isThemePreference(event.newValue)
+        ? event.newValue
+        : "system";
+      setThemeState(nextSyncedTheme);
+      setResolvedTheme(applyTheme(nextSyncedTheme));
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [initialTheme]);
+
+  useEffect(() => {
+    if (theme !== "system") return;
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemTheme = () => setResolvedTheme(applyTheme("system"));
+    media.addEventListener("change", handleSystemTheme);
+    return () => media.removeEventListener("change", handleSystemTheme);
+  }, [theme]);
 
   const setLocale = useCallback(
     (nextLocale: Locale) => {
@@ -126,14 +115,14 @@ export function PreferencesProvider({
   );
 
   const setTheme = useCallback((nextTheme: ThemePreference) => {
+    setThemeState(nextTheme);
+    setResolvedTheme(applyTheme(nextTheme));
     document.cookie = `${THEME_COOKIE_NAME}=${nextTheme}; Path=/; Max-Age=31536000; SameSite=Lax`;
     try {
       localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
     } catch {
       // Cookie persistence and immediate DOM application still work when storage is blocked.
     }
-    applyTheme(nextTheme);
-    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   }, []);
 
   const value = useMemo<PreferencesContextValue>(

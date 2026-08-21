@@ -14,11 +14,12 @@ import "./globals.css";
 
 const metadataByLocale: Record<Locale, { title: string; description: string }> = {
   en: {
-    title: "Karino | Smart task management",
-    description: "A simple, fast, and secure workspace for planning daily tasks.",
+    title: "Karino | AI-assisted task management",
+    description:
+      "A calm, secure workspace for tasks, progress, and personal AI assistance.",
   },
   de: {
-    title: "Karino | Intelligente Aufgabenverwaltung",
+    title: "Karino | KI-gestützte Aufgabenverwaltung",
     description: "Ein einfacher, schneller und sicherer Ort für deine Tagesplanung.",
   },
 };
@@ -37,14 +38,16 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const createThemeScript = (initialTheme: ThemePreference) => `(() => {
+const createThemeScript = (initialTheme: ThemePreference | null) => `(() => {
   try {
     const stored = localStorage.getItem("karino-theme");
-    const theme = stored === "light" || stored === "dark" || stored === "system" ? stored : "${initialTheme}";
-    const dark = theme === "dark" || (theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+    const initial = ${initialTheme ? JSON.stringify(initialTheme) : "null"};
+    const preference = stored === "light" || stored === "dark" || stored === "system" ? stored : (initial || "system");
+    const theme = preference === "system" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : preference;
+    const dark = theme === "dark";
     const root = document.documentElement;
     root.classList.toggle("dark", dark);
-    root.dataset.theme = theme;
+    root.dataset.theme = preference;
     root.style.colorScheme = dark ? "dark" : "light";
   } catch {}
 })();`;

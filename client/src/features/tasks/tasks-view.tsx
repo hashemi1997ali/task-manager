@@ -263,7 +263,7 @@ export function TasksView({ admin = false }: { admin?: boolean }) {
         description={admin ? t.adminDescription : t.userDescription}
       />
 
-      <section className="mt-7 grid gap-3 rounded-[var(--container-radius)] border bg-[var(--surface)] p-3 sm:grid-cols-2 xl:grid-cols-[minmax(12rem,1fr)_9rem_9rem_9rem_auto]">
+      <section className="glass-panel mt-7 grid gap-3 rounded-[var(--container-radius)] p-3 sm:grid-cols-2 xl:grid-cols-[minmax(12rem,1fr)_9rem_9rem_9rem_auto]">
         <label className="relative min-w-0 sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute left-4 top-4 size-4 text-slate-400" />
           <Input
@@ -381,7 +381,7 @@ export function TasksView({ admin = false }: { admin?: boolean }) {
       </div>
 
       {pagination && pagination.totalPages > 1 && (
-        <div className="mt-7 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-[var(--surface)] p-3 text-sm">
+        <div className="glass-panel mt-7 flex flex-wrap items-center justify-between gap-3 rounded-[var(--container-radius)] p-3 text-sm">
           <span className="text-slate-500">
             {t.page} {formatNumber(pagination.page, intlLocale)} {t.of}{" "}
             {formatNumber(pagination.totalPages, intlLocale)} ·{" "}
