@@ -48,10 +48,6 @@ export const getActiveProviders = (): ChatProvider[] => {
   return provider ? [provider] : [];
 };
 
-/** True only when the selected provider has the configuration it needs. */
-export const hasConfiguredProvider = (): boolean =>
-  getActiveProviders().some((provider) => provider.isConfigured());
-
 export interface ProviderRunResult {
   text: string;
   provider: string;

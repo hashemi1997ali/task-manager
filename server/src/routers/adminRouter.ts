@@ -13,7 +13,6 @@ import {
   deleteAdminTask,
   deleteAdminUser,
   getAdminOverview,
-  getAdminTaskById,
   getAdminTasks,
   getAdminUserById,
   getAdminUsers,
@@ -38,23 +37,13 @@ adminRouter.get("/overview", getAdminOverview);
 adminRouter.get("/tasks", getAdminTasks);
 adminRouter
   .route("/tasks/:id")
-  .get(getAdminTaskById)
-  .patch(validateByZod(adminUpdateTaskSchema), updateAdminTask)
-  .delete(requireCurrentSuperAdmin, deleteAdminTask);
-
-// Desk-native aliases; `/admin/tasks` remains available for older clients.
-adminRouter.get("/tickets", getAdminTasks);
-adminRouter
-  .route("/tickets/:id")
-  .get(getAdminTaskById)
-  .patch(validateByZod(adminUpdateTaskSchema), updateAdminTask)
+  .patch(requireCurrentSuperAdmin, validateByZod(adminUpdateTaskSchema), updateAdminTask)
   .delete(requireCurrentSuperAdmin, deleteAdminTask);
 
 adminRouter.get("/users/:id/tasks", getAdminUserTasks);
 adminRouter
   .route("/users/:userId/tasks/:taskId")
-  .get(getAdminTaskById)
-  .patch(validateByZod(adminUpdateTaskSchema), updateAdminTask)
+  .patch(requireCurrentSuperAdmin, validateByZod(adminUpdateTaskSchema), updateAdminTask)
   .delete(requireCurrentSuperAdmin, deleteAdminTask);
 
 adminRouter.get("/users", getAdminUsers);

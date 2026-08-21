@@ -2,14 +2,9 @@ import type { QueryFilter, SortOrder } from "mongoose";
 import mongoose from "mongoose";
 import type { RequestHandler } from "express";
 
-import { SupportChat, Task, User, type ITask } from "#models";
+import { Task, User, type ITask } from "#models";
 import { getTodayDashboardData } from "#services";
-import {
-  AppError,
-  applyTaskStatusTransition,
-  applyTicketPriorityTransition,
-  serializeTicket,
-} from "#utils";
+import { AppError, applyTaskStatusTransition } from "#utils";
 import { taskQuerySchema } from "#schemas";
 
 const escapeRegExp = (value: string): string =>
@@ -25,7 +20,7 @@ const requireUserId = (userId: string | undefined): string => {
 
 const validateTaskId = (id: unknown): string => {
   if (typeof id !== "string" || !mongoose.isValidObjectId(id)) {
-    throw new AppError("Invalid ticket ID", 400);
+    throw new AppError("Invalid task ID", 400);
   }
 
   return id;
@@ -42,16 +37,12 @@ export const createTask: RequestHandler = async (request, response) => {
   const task = await Task.create({
     ...request.body,
     owner,
-    source: "manual",
-    status: "todo",
-    assignee: null,
-    completedAt: null,
+    completedAt: request.body.status === "done" ? new Date() : null,
   });
-  await task.populate("assignee", "firstName lastName email roles profileImage");
   response.status(201).json({
     success: true,
-    message: "Ticket created successfully",
-    data: { task: serializeTicket(task) },
+    message: "Task created successfully",
+    data: { task },
   });
 };
 
@@ -68,17 +59,9 @@ export const getTasks: RequestHandler = async (request, response) => {
     filter.priority = query.priority;
   }
 
-  if (query.category) {
-    filter.category = query.category;
-  }
-
-  if (query.source) {
-    filter.source = query.source;
-  }
-
   if (query.search) {
     const regex = new RegExp(escapeRegExp(query.search), "i");
-    filter.$or = [{ ticketNumber: regex }, { title: regex }, { description: regex }];
+    filter.$or = [{ title: regex }, { description: regex }];
   }
 
   if (query.dueBefore || query.dueAfter) {
@@ -101,7 +84,6 @@ export const getTasks: RequestHandler = async (request, response) => {
 
   const [tasks, total] = await Promise.all([
     Task.find(filter)
-      .populate("assignee", "firstName lastName email roles profileImage")
       .sort({ [query.sortBy]: order, _id: order })
       .skip(skip)
       .limit(limit),
@@ -111,7 +93,7 @@ export const getTasks: RequestHandler = async (request, response) => {
   response.status(200).json({
     success: true,
     data: {
-      tasks: tasks.map(serializeTicket),
+      tasks,
       pagination: {
         total,
         page,
@@ -127,19 +109,13 @@ export const getTasks: RequestHandler = async (request, response) => {
 export const getTaskById: RequestHandler = async (request, response) => {
   const owner = requireUserId(request.user?.userId);
   const taskId = validateTaskId(request.params.id);
-  const task = await Task.findOne({ _id: taskId, owner }).populate(
-    "assignee",
-    "firstName lastName email roles profileImage",
-  );
+  const task = await Task.findOne({ _id: taskId, owner });
 
   if (!task) {
-    throw new AppError("Ticket not found", 404);
+    throw new AppError("Task not found", 404);
   }
 
-  response.status(200).json({
-    success: true,
-    data: { task: serializeTicket(task) },
-  });
+  response.status(200).json({ success: true, data: { task } });
 };
 
 export const updateTask: RequestHandler = async (request, response) => {
@@ -147,121 +123,61 @@ export const updateTask: RequestHandler = async (request, response) => {
   const taskId = validateTaskId(request.params.id);
 
   if (Object.keys(request.body).length === 0) {
-    throw new AppError("At least one ticket field must be provided", 400);
+    throw new AppError("At least one task field must be provided", 400);
   }
 
   const task = await Task.findOne({ _id: taskId, owner });
 
   if (!task) {
-    throw new AppError("Ticket not found", 404);
-  }
-
-  if (request.body.status && request.body.status !== task.status) {
-    const activeChat = await SupportChat.exists({
-      ticket: task._id,
-      status: { $in: ["assistant", "open", "active"] },
-    });
-    if (activeChat) {
-      throw new AppError(
-        "End the active support chat before changing the ticket status",
-        409,
-      );
-    }
+    throw new AppError("Task not found", 404);
   }
 
   applyTaskStatusTransition(task, request.body.status);
-  applyTicketPriorityTransition(
-    task,
-    request.body.priority,
-    { firstResponseDueAt: false, resolutionDueAt: false },
-    { allowExtension: false, nextStatus: request.body.status },
-  );
   Object.assign(task, request.body);
-  task.$where = { updatedAt: task.updatedAt };
-  try {
-    await task.save();
-  } catch (error) {
-    if (error instanceof mongoose.Error.DocumentNotFoundError) {
-      throw new AppError("The ticket changed before your update could be saved", 409);
-    }
-    throw error;
-  }
-  await task.populate("assignee", "firstName lastName email roles profileImage");
+  await task.save();
 
   response.status(200).json({
     success: true,
-    message: "Ticket updated successfully",
-    data: { task: serializeTicket(task) },
+    message: "Task updated successfully",
+    data: { task },
   });
 };
 
 export const deleteTask: RequestHandler = async (request, response) => {
   const owner = requireUserId(request.user?.userId);
   const taskId = validateTaskId(request.params.id);
-  const task = await Task.findOne({ _id: taskId, owner });
+  const task = await Task.findOneAndDelete({ _id: taskId, owner });
 
   if (!task) {
-    throw new AppError("Ticket not found", 404);
+    throw new AppError("Task not found", 404);
   }
-  const activeChat = await SupportChat.exists({
-    ticket: task._id,
-    status: { $in: ["open", "active"] },
-  });
-  if (activeChat) {
-    throw new AppError("End the linked support chat before deleting this ticket", 409);
-  }
-  await Promise.all([
-    task.deleteOne(),
-    SupportChat.updateMany(
-      { ticket: task._id, status: "ended" },
-      { $set: { ticket: null } },
-    ),
-  ]);
   response.status(200).json({
     success: true,
-    message: "Ticket deleted successfully",
+    message: "Task deleted successfully",
   });
 };
 
 export const getTaskSummary: RequestHandler = async (request, response) => {
   const owner = requireUserId(request.user?.userId);
-  const now = new Date();
 
   const [summary] = await Task.aggregate<{
     total: number;
-    totalTickets: number;
-    openTickets: number;
     todo: number;
     inProgress: number;
-    waitingCustomer: number;
     done: number;
     low: number;
     medium: number;
     high: number;
-    urgent: number;
     overdue: number;
-    firstResponseBreached: number;
-    resolutionBreached: number;
-    slaBreached: number;
-    unassigned: number;
   }>([
     { $match: { owner: new mongoose.Types.ObjectId(owner) } },
     {
       $group: {
         _id: null,
         total: { $sum: 1 },
-        totalTickets: { $sum: 1 },
-        openTickets: {
-          $sum: { $cond: [{ $ne: ["$status", "done"] }, 1, 0] },
-        },
         todo: { $sum: { $cond: [{ $eq: ["$status", "todo"] }, 1, 0] } },
         inProgress: {
           $sum: { $cond: [{ $eq: ["$status", "in-progress"] }, 1, 0] },
-        },
-        waitingCustomer: {
-          $sum: {
-            $cond: [{ $eq: ["$status", "waiting-customer"] }, 1, 0],
-          },
         },
         done: { $sum: { $cond: [{ $eq: ["$status", "done"] }, 1, 0] } },
         low: { $sum: { $cond: [{ $eq: ["$priority", "low"] }, 1, 0] } },
@@ -269,9 +185,6 @@ export const getTaskSummary: RequestHandler = async (request, response) => {
           $sum: { $cond: [{ $eq: ["$priority", "medium"] }, 1, 0] },
         },
         high: { $sum: { $cond: [{ $eq: ["$priority", "high"] }, 1, 0] } },
-        urgent: {
-          $sum: { $cond: [{ $eq: ["$priority", "urgent"] }, 1, 0] },
-        },
         overdue: {
           $sum: {
             $cond: [
@@ -279,88 +192,7 @@ export const getTaskSummary: RequestHandler = async (request, response) => {
                 $and: [
                   { $ne: ["$status", "done"] },
                   { $ne: ["$dueDate", null] },
-                  { $lt: ["$dueDate", now] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        firstResponseBreached: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $ne: ["$status", "done"] },
-                  { $eq: [{ $ifNull: ["$firstRespondedAt", null] }, null] },
-                  { $ne: [{ $ifNull: ["$firstResponseDueAt", null] }, null] },
-                  { $lt: ["$firstResponseDueAt", now] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        resolutionBreached: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $ne: ["$status", "done"] },
-                  { $ne: [{ $ifNull: ["$resolutionDueAt", null] }, null] },
-                  { $lt: ["$resolutionDueAt", now] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        slaBreached: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $ne: ["$status", "done"] },
-                  {
-                    $or: [
-                      {
-                        $and: [
-                          {
-                            $eq: [{ $ifNull: ["$firstRespondedAt", null] }, null],
-                          },
-                          {
-                            $ne: [{ $ifNull: ["$firstResponseDueAt", null] }, null],
-                          },
-                          { $lt: ["$firstResponseDueAt", now] },
-                        ],
-                      },
-                      {
-                        $and: [
-                          {
-                            $ne: [{ $ifNull: ["$resolutionDueAt", null] }, null],
-                          },
-                          { $lt: ["$resolutionDueAt", now] },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        unassigned: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $ne: ["$status", "done"] },
-                  { $eq: [{ $ifNull: ["$assignee", null] }, null] },
+                  { $lt: ["$dueDate", new Date()] },
                 ],
               },
               1,
@@ -378,21 +210,13 @@ export const getTaskSummary: RequestHandler = async (request, response) => {
     data: {
       summary: summary ?? {
         total: 0,
-        totalTickets: 0,
-        openTickets: 0,
         todo: 0,
         inProgress: 0,
-        waitingCustomer: 0,
         done: 0,
         low: 0,
         medium: 0,
         high: 0,
-        urgent: 0,
         overdue: 0,
-        firstResponseBreached: 0,
-        resolutionBreached: 0,
-        slaBreached: 0,
-        unassigned: 0,
       },
     },
   });

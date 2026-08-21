@@ -14,20 +14,22 @@ export const resolveRoleTier = (context: AssistantContext): RoleTier => {
 export const isStaffTier = (tier: RoleTier): boolean =>
   tier === "admin" || tier === "super_admin";
 
-/** The site guide deliberately receives no staff-interface knowledge. */
+/**
+ * The site guide deliberately receives no staff-interface knowledge. Staff
+ * account operations belong exclusively to the Staff Account Agent.
+ */
 const GUEST_HELP_TOPICS = [
-  "Karino Desk is a customer-support workspace that combines AI guidance, structured tickets, SLA-aware follow-up, and optional live human support",
-  "The public Contact form lets any visitor send an account or access request without linking it to a Karino account or private ticket",
-  "A private request assistant and customer ticket history are available only inside a signed-in customer's workspace",
-  "Guests may ask for a high-level product overview, but should not receive ticket submission steps, sign-in instructions, or staff/admin information",
+  "Karino is a productivity website for organising tasks, priorities, due dates, daily focus, and progress",
+  "The public Contact form lets any visitor send an account or access request without linking it to a Karino account",
+  "A personal task assistant is available only inside a signed-in user's private dashboard",
+  "Guests may ask for a high-level overview, but should not receive task-creation steps, sign-in instructions, or staff/admin information",
 ];
 
 const USER_HELP_TOPICS = [
-  "Dashboard shows the customer's open, waiting, urgent, resolved, requested-deadline, and SLA state with time-aware daily workload",
-  "Tickets lets the customer create, search, filter, edit, close, reopen, and delete only their own support requests",
-  "A ticket supports a human reference number, title, description, category, priority, status, requested date and time, assignment, and SLA timestamps",
-  "The private Request Assistant helps describe and categorise a ticket draft; every draft requires explicit confirmation before creation",
-  "Starting live support can link an existing owned ticket or create a private chat-sourced ticket automatically",
+  "Dashboard shows total, in-progress, completed, and overdue task counts, upcoming tasks, and overall progress",
+  "My tasks lets the user create, search, filter, edit, update the status of, and delete only their own tasks",
+  "A task supports title, description, status, priority, and due date",
+  "The private AI Assistant helps with task planning, prioritisation, and task drafts; every task draft requires confirmation before creation",
   "Private AI Assistant conversations are visible only to their owner and are separate from live-support conversations",
 ];
 
@@ -44,6 +46,46 @@ export const getAllowedHelpTopics = (tier: RoleTier): string[] => {
 };
 
 export const getForbiddenHelpTopics = (): string[] => [...FORBIDDEN_HELP_TOPICS];
+
+export interface StaffCapabilities {
+  banUsers: boolean;
+  unbanUsers: boolean;
+  viewUserStatus: boolean;
+  promoteAdmin: boolean;
+  demoteAdmin: boolean;
+}
+
+/**
+ * Admins may manage regular user accounts. Only a super admin may change
+ * administrator membership. Backend services re-check the target role.
+ */
+export const getStaffCapabilities = (tier: RoleTier): StaffCapabilities => {
+  if (tier === "admin") {
+    return {
+      banUsers: true,
+      unbanUsers: true,
+      viewUserStatus: true,
+      promoteAdmin: false,
+      demoteAdmin: false,
+    };
+  }
+  if (tier === "super_admin") {
+    return {
+      banUsers: true,
+      unbanUsers: true,
+      viewUserStatus: true,
+      promoteAdmin: true,
+      demoteAdmin: true,
+    };
+  }
+  return {
+    banUsers: false,
+    unbanUsers: false,
+    viewUserStatus: false,
+    promoteAdmin: false,
+    demoteAdmin: false,
+  };
+};
 
 /**
  * Guests use Contact instead of the staff queue. Regular users can reach

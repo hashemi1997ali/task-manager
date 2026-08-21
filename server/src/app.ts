@@ -38,7 +38,6 @@ app.get("/", (_request, response) => {
 
 app.use("/auth", authRouter);
 app.use("/tasks", taskRouter);
-app.use("/tickets", taskRouter);
 app.use("/admin", adminRouter);
 app.use("/assistant", assistantRouter);
 app.use("/chat", chatRouter);

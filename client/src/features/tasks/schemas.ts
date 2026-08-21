@@ -20,11 +20,8 @@ export const createTaskFormSchema = (locale: Locale) => {
   return z.object({
     title: z.string().trim().min(3, t.titleMin).max(100, t.titleMax),
     description: z.string().trim().max(2000, t.descriptionMax),
-    status: z.enum(["todo", "in-progress", "waiting-customer", "done"]).optional(),
-    priority: z.enum(["low", "medium", "high", "urgent"]),
-    category: z.enum(["general", "account", "technical", "billing", "feature"]),
-    source: z.enum(["manual", "assistant", "chat", "contact"]).optional(),
-    assignee: z.string().optional(),
+    status: z.enum(["todo", "in-progress", "done"]),
+    priority: z.enum(["low", "medium", "high"]),
     dueDate: z.string(),
   });
 };

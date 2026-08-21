@@ -13,8 +13,8 @@ export const unsupportedLanguageReply = (locale: AssistantLocale): string =>
 export const outOfScopeReply = (locale: AssistantLocale): string =>
   line(
     locale,
-    "I can only help with Karino Desk and its customer-support features.",
-    "Ich kann nur bei Karino Desk und seinen Kundensupport-Funktionen helfen.",
+    "I can only help with Karino and its task-management features.",
+    "Ich kann nur bei Karino und seinen Funktionen zur Aufgabenverwaltung helfen.",
   );
 
 export const aiUnavailableReply = (locale: AssistantLocale): string =>

@@ -1,8 +1,8 @@
 /**
  * Orchestrator.
  *
- * Wires inbound guardrails, language-safe agent routing, support escalation,
- * and outbound guardrails into one entry point.
+ * Wires inbound guardrails, language-safe agent routing, deterministic and
+ * agent-requested escalation, and outbound guardrails into one entry point.
  */
 
 import type {
@@ -22,11 +22,7 @@ import {
   unsupportedLanguageReply,
 } from "../fallback/unavailable.ts";
 import { isStronglyMixedLanguage } from "../language.ts";
-import {
-  getConfiguredProviderName,
-  hasConfiguredProvider,
-  runProviders,
-} from "../providers/index.ts";
+import { getConfiguredProviderName } from "../providers/index.ts";
 import { resolveRoleTier } from "../policies/index.ts";
 import { triage } from "./triage.ts";
 
@@ -93,57 +89,30 @@ const parseEscalationMarker = (
   };
 };
 
-const verifyProviderForGuardrail = async (): Promise<string | null> => {
-  const result = await runProviders({
-    systemPrompt:
-      "This is a provider availability check for a safety refusal. Reply with OK only.",
-    history: [],
-    message: "OK",
-    temperature: 0,
-    maxTokens: 5,
-  });
-  return result?.text.trim() ? result.provider : null;
-};
-
 export const runOrchestrator = async (
   message: string,
   history: AssistantHistoryMessage[],
   context: AssistantContext,
 ): Promise<AssistantResult> => {
-  if (!hasConfiguredProvider()) {
-    return finalize(
-      aiUnavailableReply(context.locale),
-      "website-help",
-      UNAVAILABLE_PROVIDER,
-      false,
-      context,
-      null,
-    );
-  }
-
   const decision = triage(message, context);
   const input: AgentInput = { message, history, context };
 
   if (decision.wrongLanguage) {
-    const provider = await verifyProviderForGuardrail();
     return finalize(
-      provider
-        ? unsupportedLanguageReply(context.locale)
-        : aiUnavailableReply(context.locale),
+      unsupportedLanguageReply(context.locale),
       "website-help",
-      provider ?? UNAVAILABLE_PROVIDER,
-      provider !== null,
+      UNAVAILABLE_PROVIDER,
+      true,
       context,
       null,
     );
   }
   if (decision.outOfScope) {
-    const provider = await verifyProviderForGuardrail();
     return finalize(
-      provider ? outOfScopeReply(context.locale) : aiUnavailableReply(context.locale),
+      outOfScopeReply(context.locale),
       "website-help",
-      provider ?? UNAVAILABLE_PROVIDER,
-      provider !== null,
+      UNAVAILABLE_PROVIDER,
+      true,
       context,
       null,
     );

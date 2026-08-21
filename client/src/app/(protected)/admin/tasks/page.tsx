@@ -1,14 +1,11 @@
-import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
-export default async function LegacyAdminTasksPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(await searchParams)) {
-    if (Array.isArray(value)) value.forEach((item) => params.append(key, item));
-    else if (value) params.set(key, value);
-  }
-  redirect(`/admin/tickets${params.size ? `?${params.toString()}` : ""}`);
+import { TasksView } from "@/features/tasks/tasks-view";
+
+export default function AdminTasksPage() {
+  return (
+    <Suspense>
+      <TasksView admin />
+    </Suspense>
+  );
 }

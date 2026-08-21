@@ -6,9 +6,7 @@ import {
   Circle,
   Clock3,
   Edit3,
-  Headset,
   LoaderCircle,
-  PauseCircle,
   Trash2,
   UserRound,
 } from "lucide-react";
@@ -26,13 +24,8 @@ import { usePreferences } from "@/providers/preferences-provider";
 
 const copy = {
   en: {
-    status: {
-      todo: "To do",
-      "in-progress": "In progress",
-      "waiting-customer": "Waiting on customer",
-      done: "Done",
-    },
-    priority: { low: "Low", medium: "Medium", high: "High", urgent: "Urgent" },
+    status: { todo: "To do", "in-progress": "In progress", done: "Done" },
+    priority: { low: "Low", medium: "Medium", high: "High" },
     edit: "Edit",
     delete: "Delete",
     completedOn: "Completed on",
@@ -41,21 +34,13 @@ const copy = {
     setStatus: "Change status to",
     updated: "Updated",
     id: "ID",
-    discussSupport: "Discuss with support",
-    openConversation: "Open conversation",
   },
   de: {
-    status: {
-      todo: "Offen",
-      "in-progress": "In Bearbeitung",
-      "waiting-customer": "Wartet auf Kunden",
-      done: "Erledigt",
-    },
+    status: { todo: "Offen", "in-progress": "In Bearbeitung", done: "Erledigt" },
     priority: {
       low: "Niedrig",
       medium: "Mittel",
       high: "Hoch",
-      urgent: "Dringend",
     },
     edit: "Bearbeiten",
     delete: "Löschen",
@@ -65,8 +50,6 @@ const copy = {
     setStatus: "Status ändern zu",
     updated: "Aktualisiert",
     id: "ID",
-    discussSupport: "Mit Support besprechen",
-    openConversation: "GesprÃ¤ch Ã¶ffnen",
   },
 } as const;
 
@@ -75,10 +58,6 @@ const statusClasses: Record<TaskStatus, { className: string; icon: typeof Circle
   "in-progress": {
     className: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
     icon: Clock3,
-  },
-  "waiting-customer": {
-    className: "bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
-    icon: PauseCircle,
   },
   done: {
     className:
@@ -91,19 +70,16 @@ const quickStatusClasses: Record<TaskStatus, string> = {
   todo: "bg-[var(--surface)] text-[var(--foreground)] shadow-sm",
   "in-progress":
     "bg-amber-50 text-amber-700 shadow-sm dark:bg-amber-500/15 dark:text-amber-300",
-  "waiting-customer":
-    "bg-violet-50 text-violet-700 shadow-sm dark:bg-violet-500/15 dark:text-violet-300",
   done: "bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-500/15 dark:text-emerald-300",
 };
 
 const statusStripeClasses: Record<TaskStatus, string> = {
   todo: "bg-slate-700 dark:bg-slate-300",
   "in-progress": "bg-amber-700 dark:bg-amber-300",
-  "waiting-customer": "bg-violet-700 dark:bg-violet-300",
   done: "bg-emerald-700 dark:bg-emerald-300",
 };
 
-const statusOrder: TaskStatus[] = ["todo", "in-progress", "waiting-customer", "done"];
+const statusOrder: TaskStatus[] = ["todo", "in-progress", "done"];
 
 export function TaskCard({
   task,
@@ -113,9 +89,6 @@ export function TaskCard({
   onDelete,
   onStatusChange,
   statusUpdating,
-  onDiscussSupport,
-  staffSupportAction = false,
-  supportUpdating = false,
   compact = false,
   showUpdatedAt = false,
 }: {
@@ -126,9 +99,6 @@ export function TaskCard({
   onDelete?: () => void;
   onStatusChange?: (status: TaskStatus) => void;
   statusUpdating?: boolean;
-  onDiscussSupport?: () => void;
-  staffSupportAction?: boolean;
-  supportUpdating?: boolean;
   compact?: boolean;
   showUpdatedAt?: boolean;
 }) {
@@ -139,8 +109,12 @@ export function TaskCard({
     task.status !== "done" &&
     task.dueDate &&
     new Date(task.dueDate).getTime() < referenceTime;
-  const currentStatusIndex = statusOrder.indexOf(task.status);
-  const nextTaskStatus = statusOrder[(currentStatusIndex + 1) % statusOrder.length];
+  const nextTaskStatus: TaskStatus =
+    task.status === "todo"
+      ? "in-progress"
+      : task.status === "in-progress"
+        ? "done"
+        : "todo";
 
   return (
     <Card
@@ -269,22 +243,6 @@ export function TaskCard({
             })}
           </div>
         </div>
-      )}
-
-      {onDiscussSupport && (
-        <button
-          type="button"
-          onClick={onDiscussSupport}
-          disabled={supportUpdating}
-          className="focus-ring mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--primary-soft)] px-4 text-sm font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)] hover:text-[var(--on-primary)] disabled:cursor-wait disabled:opacity-60"
-        >
-          {supportUpdating ? (
-            <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <Headset className="size-4" aria-hidden="true" />
-          )}
-          {staffSupportAction ? t.openConversation : t.discussSupport}
-        </button>
       )}
 
       <div

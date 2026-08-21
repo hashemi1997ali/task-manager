@@ -51,13 +51,8 @@ const copy = {
     noUpcoming: "No tasks",
     scheduledTasks: (count: number) => `${count} task${count === 1 ? "" : "s"} scheduled`,
     completedTasks: (count: number) => `${count} task${count === 1 ? "" : "s"} completed`,
-    priority: { low: "Low", medium: "Medium", high: "High", urgent: "Urgent" },
-    status: {
-      todo: "To do",
-      "in-progress": "In progress",
-      "waiting-customer": "Waiting on customer",
-      done: "Done",
-    },
+    priority: { low: "Low", medium: "Medium", high: "High" },
+    status: { todo: "To do", "in-progress": "In progress", done: "Done" },
     brief: ({
       overdue,
       highPriority,
@@ -107,18 +102,8 @@ const copy = {
       `${count} Aufgabe${count === 1 ? "" : "n"} geplant`,
     completedTasks: (count: number) =>
       `${count} Aufgabe${count === 1 ? "" : "n"} erledigt`,
-    priority: {
-      low: "Niedrig",
-      medium: "Mittel",
-      high: "Hoch",
-      urgent: "Dringend",
-    },
-    status: {
-      todo: "Offen",
-      "in-progress": "In Bearbeitung",
-      "waiting-customer": "Wartet auf Kunden",
-      done: "Erledigt",
-    },
+    priority: { low: "Niedrig", medium: "Mittel", high: "Hoch" },
+    status: { todo: "Offen", "in-progress": "In Bearbeitung", done: "Erledigt" },
     brief: ({
       overdue,
       highPriority,

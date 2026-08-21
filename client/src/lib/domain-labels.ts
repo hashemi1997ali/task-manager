@@ -1,11 +1,4 @@
-import type {
-  BanReason,
-  TaskPriority,
-  TaskStatus,
-  TicketCategory,
-  TicketSource,
-  UserRole,
-} from "@/lib/types";
+import type { BanReason, TaskPriority, TaskStatus, UserRole } from "@/lib/types";
 import type { Locale } from "@/lib/preferences";
 
 const banReasonLabels: Record<Locale, Record<BanReason, string>> = {
@@ -31,29 +24,27 @@ const banReasonLabels: Record<Locale, Record<BanReason, string>> = {
 
 const roleLabels: Record<Locale, Record<UserRole, string>> = {
   en: {
-    user: "Customer",
-    admin: "Support agent",
-    super_admin: "Supervisor",
+    user: "user",
+    admin: "admin",
+    super_admin: "super admin",
   },
   de: {
-    user: "Kunde",
-    admin: "Support-Agent",
-    super_admin: "Leitung",
+    user: "user",
+    admin: "admin",
+    super_admin: "super admin",
   },
 };
 
 const taskStatusLabels: Record<Locale, Record<TaskStatus, string>> = {
   en: {
-    todo: "Open",
+    todo: "To do",
     "in-progress": "In progress",
-    "waiting-customer": "Waiting on customer",
-    done: "Resolved",
+    done: "Done",
   },
   de: {
     todo: "Offen",
     "in-progress": "In Bearbeitung",
-    "waiting-customer": "Wartet auf Kunden",
-    done: "Gelöst",
+    done: "Erledigt",
   },
 };
 
@@ -62,45 +53,11 @@ const taskPriorityLabels: Record<Locale, Record<TaskPriority, string>> = {
     low: "Low",
     medium: "Medium",
     high: "High",
-    urgent: "Urgent",
   },
   de: {
     low: "Niedrig",
     medium: "Mittel",
     high: "Hoch",
-    urgent: "Dringend",
-  },
-};
-
-const ticketCategoryLabels: Record<Locale, Record<TicketCategory, string>> = {
-  en: {
-    general: "General",
-    account: "Account",
-    technical: "Technical",
-    billing: "Billing",
-    feature: "Feature request",
-  },
-  de: {
-    general: "Allgemein",
-    account: "Konto",
-    technical: "Technisch",
-    billing: "Abrechnung",
-    feature: "Funktionswunsch",
-  },
-};
-
-const ticketSourceLabels: Record<Locale, Record<TicketSource, string>> = {
-  en: {
-    manual: "Portal",
-    assistant: "AI assistant",
-    chat: "Live chat",
-    contact: "Contact form",
-  },
-  de: {
-    manual: "Portal",
-    assistant: "KI-Assistent",
-    chat: "Live-Chat",
-    contact: "Kontaktformular",
   },
 };
 
@@ -115,14 +72,6 @@ export const getTaskStatusLabel = (status: TaskStatus, locale: Locale): string =
 
 export const getTaskPriorityLabel = (priority: TaskPriority, locale: Locale): string =>
   taskPriorityLabels[locale][priority];
-
-export const getTicketCategoryLabel = (
-  category: TicketCategory,
-  locale: Locale,
-): string => ticketCategoryLabels[locale][category];
-
-export const getTicketSourceLabel = (source: TicketSource, locale: Locale): string =>
-  ticketSourceLabels[locale][source];
 
 export const getAssistantAgentLabel = (agent: string, locale: Locale): string => {
   void agent;

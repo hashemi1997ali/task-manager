@@ -5,7 +5,7 @@ import {
   ArrowLeft,
   Ban,
   Calendar,
-  TicketCheck,
+  CheckSquare2,
   Edit3,
   Monitor,
   RotateCcw,
@@ -29,7 +29,6 @@ import {
   deleteUserTaskRequest,
   getUserRequest,
   getUserTasksRequest,
-  getUsersRequest,
   setAdminRoleRequest,
   unbanUserRequest,
   updateUserRequest,
@@ -38,7 +37,6 @@ import {
 import { BanUserDialog, EditUserDialog } from "@/features/admin/admin-users-view";
 import { useAuth } from "@/features/auth/auth-provider";
 import type { ProfileFormValues } from "@/features/auth/schemas";
-import { openStaffTicketChatRequest } from "@/features/chat/api";
 import { TaskCard } from "@/features/tasks/task-card";
 import { TaskForm } from "@/features/tasks/task-form";
 import { TaskTable } from "@/features/tasks/task-table";
@@ -50,30 +48,30 @@ import { usePreferences } from "@/providers/preferences-provider";
 
 const copy = {
   en: {
-    back: "Back to customers & team",
-    tasks: "Tickets",
-    tasksHeading: (name: string) => `${name}'s tickets`,
-    taskCount: "Tickets",
+    back: "Back to users",
+    tasks: "Tasks",
+    tasksHeading: (name: string) => `${name}'s tasks`,
+    taskCount: "Tasks",
     sessions: "Active sessions",
     joined: "Joined",
     active: "Active",
     banned: "Banned",
     banReason: "Ban reason",
-    noTasks: "This customer has no tickets yet.",
-    loading: "Loading customer profile…",
-    edit: "Edit ticket",
-    delete: "Delete ticket",
-    deleteTitle: "Delete this customer's ticket?",
-    deleteDescription: "This action permanently deletes the selected ticket.",
-    saved: "Ticket updated.",
-    deleted: "Ticket deleted.",
+    noTasks: "This user has no tasks yet.",
+    loading: "Loading user profile…",
+    edit: "Edit task",
+    delete: "Delete task",
+    deleteTitle: "Delete this user's task?",
+    deleteDescription: "This action permanently deletes the selected task.",
+    saved: "Task updated.",
+    deleted: "Task deleted.",
     editUser: "Edit profile",
     banUser: "Ban user",
     unbanUser: "Unban user",
     deleteUser: "Delete account",
     deleteUserTitle: "Delete this user account?",
     deleteUserDescription: (name: string) =>
-      `${name}'s account and all related tickets, chats, sessions, and assistant conversations will be permanently deleted.`,
+      `${name}'s account and all related tasks, chats, sessions, and assistant conversations will be permanently deleted.`,
     userDeleted: "User and related data deleted.",
     userSaved: "User details saved.",
     bannedDone: "The account was banned.",
@@ -82,33 +80,32 @@ const copy = {
     of: "of",
     previous: "Previous",
     next: "Next",
-    conversationOpened: "Support conversation opened.",
   },
   de: {
-    back: "Zurück zu Kunden & Team",
-    tasks: "Tickets",
-    tasksHeading: (name: string) => `Tickets von ${name}`,
-    taskCount: "Tickets",
+    back: "Zurück zu Benutzern",
+    tasks: "Aufgaben",
+    tasksHeading: (name: string) => `Aufgaben von ${name}`,
+    taskCount: "Aufgaben",
     sessions: "Aktive Sitzungen",
     joined: "Registriert",
     active: "Aktiv",
     banned: "Gesperrt",
     banReason: "Sperrgrund",
-    noTasks: "Dieser Kunde hat noch keine Tickets.",
-    loading: "Kundenprofil wird geladen…",
-    edit: "Ticket bearbeiten",
-    delete: "Ticket löschen",
-    deleteTitle: "Dieses Kundenticket löschen?",
-    deleteDescription: "Das ausgewählte Ticket wird dauerhaft gelöscht.",
-    saved: "Ticket aktualisiert.",
-    deleted: "Ticket gelöscht.",
+    noTasks: "Dieser Benutzer hat noch keine Aufgaben.",
+    loading: "Benutzerprofil wird geladen…",
+    edit: "Aufgabe bearbeiten",
+    delete: "Aufgabe löschen",
+    deleteTitle: "Diese Benutzeraufgabe löschen?",
+    deleteDescription: "Die ausgewählte Aufgabe wird dauerhaft gelöscht.",
+    saved: "Aufgabe aktualisiert.",
+    deleted: "Aufgabe gelöscht.",
     editUser: "Profil bearbeiten",
     banUser: "Benutzer sperren",
     unbanUser: "Sperre aufheben",
     deleteUser: "Konto löschen",
     deleteUserTitle: "Dieses Benutzerkonto löschen?",
     deleteUserDescription: (name: string) =>
-      `Das Konto von ${name} und alle zugehörigen Tickets, Chats, Sitzungen und Assistent-Unterhaltungen werden dauerhaft gelöscht.`,
+      `Das Konto von ${name} und alle zugehörigen Aufgaben, Chats, Sitzungen und Assistent-Unterhaltungen werden dauerhaft gelöscht.`,
     userDeleted: "Benutzer und zugehörige Daten gelöscht.",
     userSaved: "Benutzerdaten gespeichert.",
     bannedDone: "Das Konto wurde gesperrt.",
@@ -117,7 +114,6 @@ const copy = {
     of: "von",
     previous: "Zurück",
     next: "Weiter",
-    conversationOpened: "Support-Gespräch geöffnet.",
   },
 } as const;
 
@@ -125,12 +121,7 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
   const router = useRouter();
   const { locale, intlLocale } = usePreferences();
   const t = copy[locale];
-  const {
-    user: currentUser,
-    isAdmin,
-    isSuperAdmin,
-    updateUser: updateCurrentUser,
-  } = useAuth();
+  const { user: currentUser, isSuperAdmin, updateUser: updateCurrentUser } = useAuth();
   const queryClient = useQueryClient();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
@@ -148,35 +139,7 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
     queryKey: ["admin", "user", userId, "tasks", taskPage],
     queryFn: () => getUserTasksRequest(userId, taskPage, 10),
   });
-  const agentsQuery = useQuery({
-    queryKey: ["admin", "ticket-assignees", "admin"],
-    queryFn: () => getUsersRequest({ page: 1, limit: 100, role: "admin" }),
-    enabled: isSuperAdmin,
-  });
-  const supervisorsQuery = useQuery({
-    queryKey: ["admin", "ticket-assignees", "super_admin"],
-    queryFn: () => getUsersRequest({ page: 1, limit: 100, role: "super_admin" }),
-    enabled: isSuperAdmin,
-  });
   const taskPagination = tasksQuery.data?.pagination;
-  const availableAssignees = isSuperAdmin
-    ? [
-        ...(agentsQuery.data?.users ?? []),
-        ...(supervisorsQuery.data?.users ?? []),
-      ].filter(
-        (person, index, people) =>
-          people.findIndex((item) => getId(item) === getId(person)) === index,
-      )
-    : currentUser
-      ? [currentUser]
-      : [];
-  const canManageTicket = (ticket: Task): boolean => {
-    if (!isAdmin) return false;
-    if (isSuperAdmin || !ticket.assignee) return true;
-    const assigneeId =
-      typeof ticket.assignee === "object" ? getId(ticket.assignee) : ticket.assignee;
-    return Boolean(currentUser && assigneeId === getId(currentUser));
-  };
 
   const updateMutation = useMutation({
     mutationFn: ({
@@ -202,20 +165,6 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
       if (taskPage > lastPage) setTaskPage(lastPage);
       toast.success(t.deleted);
       await queryClient.invalidateQueries({ queryKey: ["admin", "user", userId] });
-    },
-    onError: (error) => toast.error(getErrorMessage(error, locale)),
-  });
-  const openConversationMutation = useMutation({
-    mutationFn: (ticket: Task) => openStaffTicketChatRequest(getId(ticket), locale),
-    onSuccess: async (chat) => {
-      toast.success(t.conversationOpened);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin", "user", userId] }),
-        queryClient.invalidateQueries({ queryKey: ["admin", "tickets"] }),
-        queryClient.invalidateQueries({ queryKey: ["admin", "overview"] }),
-        queryClient.invalidateQueries({ queryKey: ["support", "queue"] }),
-      ]);
-      router.push(`/admin/support?chat=${encodeURIComponent(chat.id)}`);
     },
     onError: (error) => toast.error(getErrorMessage(error, locale)),
   });
@@ -300,85 +249,64 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
       : "—";
 
   return (
-    <div className="desk-grid-glow space-y-5">
+    <div>
       <Link
         href="/admin/users"
-        className="focus-ring desk-toolbar inline-flex min-h-10 items-center gap-2 px-3 text-sm font-bold text-[var(--muted)] hover:text-[var(--primary)]"
-        style={{ alignItems: "center", flexDirection: "row" }}
+        className="focus-ring inline-flex items-center gap-2 rounded-full text-sm font-bold text-[var(--muted)] hover:text-[var(--primary)]"
       >
         <ArrowLeft className="size-4" />
         {t.back}
       </Link>
 
-      <div className="min-w-0 space-y-6">
-        <Card className="desk-panel relative min-w-0 overflow-hidden p-0">
-          <span
-            className={`absolute inset-y-0 start-0 z-20 w-1 ${
-              user.ban?.isBanned
-                ? "bg-rose-500"
-                : targetSuperAdmin
-                  ? "bg-violet-500"
-                  : targetAdmin
-                    ? "bg-indigo-500"
-                    : "bg-slate-400"
-            }`}
-            aria-hidden="true"
-          />
-          <div className="relative border-b border-[var(--border)] bg-[var(--surface-muted)]/55 p-5 sm:p-7">
-            <div className="relative z-10 flex min-w-0 flex-col justify-between gap-5 sm:flex-row sm:items-start">
-              <div className="order-2 flex min-w-0 items-center gap-4 sm:order-1">
-                <UserAvatar
-                  user={user}
-                  className="size-20 shrink-0 ring-4 ring-[var(--surface)] shadow-xl sm:size-24"
-                  imageSizes="96px"
-                />
+      <div className="mt-6 min-w-0">
+        <Card className="min-w-0 overflow-hidden p-5 md:p-6">
+          <div className="min-w-0">
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <RoleBadge role={highestRole}>
+                    {getUserRoleLabel(highestRole, locale)}
+                  </RoleBadge>
+                  <AccountStatusBadge banned={Boolean(user.ban?.isBanned)}>
+                    {user.ban?.isBanned ? t.banned : t.active}
+                  </AccountStatusBadge>
+                </div>
+                {mayManageUser && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="size-11 shrink-0 px-0 sm:w-auto sm:px-3"
+                    onClick={() => setEditingUser(user)}
+                    aria-label={t.editUser}
+                    title={t.editUser}
+                  >
+                    <Edit3 className="size-4" />
+                    <span className="hidden sm:inline">{t.editUser}</span>
+                  </Button>
+                )}
+              </div>
+
+              <div className="mt-4 flex min-w-0 items-center gap-4">
+                <UserAvatar user={user} className="size-16 shrink-0" imageSizes="64px" />
                 <div className="min-w-0">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <RoleBadge role={highestRole}>
-                      {getUserRoleLabel(highestRole, locale)}
-                    </RoleBadge>
-                    <AccountStatusBadge banned={Boolean(user.ban?.isBanned)}>
-                      {user.ban?.isBanned ? t.banned : t.active}
-                    </AccountStatusBadge>
-                  </div>
-                  <h1 className="mt-3 break-words text-2xl font-black tracking-[-0.035em] sm:text-3xl">
+                  <h1 className="break-words text-2xl font-black">
                     {user.firstName} {user.lastName}
                   </h1>
-                  <p className="mt-1 break-all text-sm text-[var(--muted)]" dir="ltr">
+                  <p className="mt-1 break-all text-sm text-[var(--muted)]">
                     {user.email}
                   </p>
                 </div>
               </div>
-              {mayManageUser && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="order-1 ms-auto size-11 shrink-0 px-0 sm:order-2 sm:w-auto sm:px-3"
-                  onClick={() => setEditingUser(user)}
-                  aria-label={t.editUser}
-                  title={t.editUser}
-                >
-                  <Edit3 className="size-4" />
-                  <span className="hidden sm:inline">{t.editUser}</span>
-                </Button>
-              )}
-            </div>
-            <div
-              className="pointer-events-none absolute -end-20 -top-24 size-64 rounded-full bg-[var(--primary)]/10 blur-3xl"
-              aria-hidden="true"
-            />
-          </div>
-          <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)] lg:p-7">
-            <div className="min-w-0">
+
               {user.ban?.isBanned && (
-                <p className="w-fit max-w-full rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/15 dark:text-rose-300">
+                <p className="mt-3 w-fit max-w-full rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
                   <span className="font-black">{t.banReason}:</span>{" "}
                   {getBanReasonLabel(user.ban.reason, locale)}
                 </p>
               )}
 
               {(mayBanUser || mayDeleteUser) && (
-                <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
+                <div className="mt-5 grid gap-2 sm:flex sm:flex-wrap">
                   {mayBanUser &&
                     (user.ban?.isBanned ? (
                       <Button
@@ -416,33 +344,22 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
               )}
             </div>
 
-            <dl className="grid gap-2 text-sm sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              <div className="desk-stat flex min-h-16 items-center justify-between gap-3 p-3">
+            <dl className="mt-6 grid gap-2 text-sm xl:grid-cols-3">
+              <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-[var(--surface-muted)] px-3 py-2.5">
                 <dt className="flex min-w-0 items-center gap-2 text-[var(--muted)]">
-                  <span className="desk-icon-well size-9 shrink-0">
-                    <TicketCheck className="size-4" />
-                  </span>
-                  <span className="text-xs font-bold">{t.taskCount}</span>
+                  <CheckSquare2 className="size-4 shrink-0" /> {t.taskCount}
                 </dt>
-                <dd className="shrink-0 text-lg font-black">{stats.taskCount}</dd>
+                <dd className="shrink-0 font-black">{stats.taskCount}</dd>
               </div>
-              <div className="desk-stat flex min-h-16 items-center justify-between gap-3 p-3">
+              <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-[var(--surface-muted)] px-3 py-2.5">
                 <dt className="flex min-w-0 items-center gap-2 text-[var(--muted)]">
-                  <span className="desk-icon-well size-9 shrink-0">
-                    <Monitor className="size-4" />
-                  </span>
-                  <span className="text-xs font-bold">{t.sessions}</span>
+                  <Monitor className="size-4 shrink-0" /> {t.sessions}
                 </dt>
-                <dd className="shrink-0 text-lg font-black">
-                  {stats.activeSessionCount}
-                </dd>
+                <dd className="shrink-0 font-black">{stats.activeSessionCount}</dd>
               </div>
-              <div className="desk-stat flex min-h-16 items-center justify-between gap-3 p-3 sm:col-span-3 lg:col-span-1 xl:col-span-1">
+              <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-[var(--surface-muted)] px-3 py-2.5">
                 <dt className="flex min-w-0 items-center gap-2 text-[var(--muted)]">
-                  <span className="desk-icon-well size-9 shrink-0">
-                    <Calendar className="size-4" />
-                  </span>
-                  <span className="text-xs font-bold">{t.joined}</span>
+                  <Calendar className="size-4 shrink-0" /> {t.joined}
                 </dt>
                 <dd className="shrink-0 text-right text-xs font-black whitespace-nowrap">
                   {formatDate(user.createdAt)}
@@ -452,23 +369,8 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
           </div>
         </Card>
 
-        <div id="tasks" className="min-w-0 scroll-mt-6">
-          <div className="desk-panel-soft flex items-center justify-between gap-4 p-4 sm:p-5">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="desk-icon-well text-[var(--primary)]">
-                <TicketCheck className="size-5" />
-              </span>
-              <div className="min-w-0">
-                <p className="desk-eyebrow">{t.tasks}</p>
-                <h2 className="desk-section-title mt-1 truncate sm:text-lg">
-                  {t.tasksHeading(user.firstName)}
-                </h2>
-              </div>
-            </div>
-            <span className="desk-stat shrink-0 px-3 py-2 text-sm font-black">
-              {formatNumber(stats.taskCount, intlLocale)}
-            </span>
-          </div>
+        <div id="tasks" className="mt-8 min-w-0 scroll-mt-6">
+          <h2 className="text-2xl font-black">{t.tasksHeading(user.firstName)}</h2>
 
           {tasksQuery.isPending ? (
             <div className="mt-5">
@@ -482,11 +384,11 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
               />
             </div>
           ) : tasks.length === 0 ? (
-            <Card className="desk-panel mt-4 p-8 text-center text-sm text-[var(--muted)]">
+            <Card className="mt-5 p-8 text-center text-sm text-[var(--muted)]">
               {t.noTasks}
             </Card>
           ) : (
-            <div className="mt-4">
+            <div className="mt-5">
               <div className="grid min-w-0 items-start gap-4 lg:grid-cols-2 xl:hidden">
                 {tasks.map((task) => {
                   const taskId = getId(task);
@@ -497,27 +399,14 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
                       referenceTime={tasksQuery.dataUpdatedAt}
                       showUpdatedAt
                       compact
-                      onEdit={
-                        canManageTicket(task) ? () => setEditingTask(task) : undefined
-                      }
+                      onEdit={isSuperAdmin ? () => setEditingTask(task) : undefined}
                       onDelete={isSuperAdmin ? () => setDeletingTask(task) : undefined}
                       onStatusChange={
-                        canManageTicket(task)
+                        isSuperAdmin
                           ? (status) =>
                               updateMutation.mutate({ taskId, values: { status } })
                           : undefined
                       }
-                      onDiscussSupport={
-                        canManageTicket(task)
-                          ? () => openConversationMutation.mutate(task)
-                          : undefined
-                      }
-                      staffSupportAction
-                      supportUpdating={Boolean(
-                        openConversationMutation.isPending &&
-                        openConversationMutation.variables &&
-                        getId(openConversationMutation.variables) === taskId,
-                      )}
                       statusUpdating={Boolean(
                         updateMutation.isPending &&
                         updateMutation.variables?.taskId === taskId,
@@ -529,10 +418,10 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
               <TaskTable
                 tasks={tasks}
                 referenceTime={tasksQuery.dataUpdatedAt}
-                onEdit={isAdmin ? setEditingTask : undefined}
+                onEdit={isSuperAdmin ? setEditingTask : undefined}
                 onDelete={isSuperAdmin ? setDeletingTask : undefined}
                 onStatusChange={
-                  isAdmin
+                  isSuperAdmin
                     ? (task, status) =>
                         updateMutation.mutate({
                           taskId: getId(task),
@@ -540,28 +429,18 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
                         })
                     : undefined
                 }
-                onDiscussSupport={(task) => openConversationMutation.mutate(task)}
-                staffSupportAction
-                isSupportOpening={(task) =>
-                  Boolean(
-                    openConversationMutation.isPending &&
-                    openConversationMutation.variables &&
-                    getId(openConversationMutation.variables) === getId(task),
-                  )
-                }
                 isStatusUpdating={(task) =>
                   Boolean(
                     updateMutation.isPending &&
                     updateMutation.variables?.taskId === getId(task),
                   )
                 }
-                canManage={canManageTicket}
               />
             </div>
           )}
 
           {taskPagination && taskPagination.totalPages > 1 && (
-            <div className="desk-toolbar mt-5 flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+            <div className="mt-7 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-[var(--surface)] p-3 text-sm">
               <span className="text-[var(--muted)]">
                 {t.page} {formatNumber(taskPagination.page, intlLocale)} {t.of}{" "}
                 {formatNumber(taskPagination.totalPages, intlLocale)} ·{" "}
@@ -599,8 +478,6 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
           <TaskForm
             key={`${getId(editingTask)}-${editingTask.updatedAt}`}
             task={editingTask}
-            admin
-            assignees={availableAssignees}
             loading={updateMutation.isPending}
             onSubmit={(values) =>
               updateMutation.mutate({ taskId: getId(editingTask), values })

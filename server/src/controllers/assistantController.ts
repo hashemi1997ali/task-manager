@@ -10,7 +10,7 @@ import {
   type IAssistantMessage,
   type IUser,
 } from "#models";
-import { AppError, serializeTicket } from "#utils";
+import { AppError } from "#utils";
 
 const validateObjectId = (value: unknown, label: string): string => {
   if (typeof value !== "string" || !mongoose.isValidObjectId(value)) {
@@ -35,7 +35,6 @@ const serializeProposal = (proposal: IAssistantMessage["taskProposal"]) =>
         title: proposal.title,
         description: proposal.description,
         priority: proposal.priority,
-        category: proposal.category,
         dueDate: proposal.dueDate,
         status: proposal.status,
         taskId: proposal.taskId ? String(proposal.taskId) : null,
@@ -60,37 +59,17 @@ const serializeConversation = (
 });
 
 const loadTaskContext = async (userId: string) => {
-  const activeTasks = await Task.find({ owner: userId, status: { $ne: "done" } })
-    .select(
-      "ticketNumber title status priority category dueDate resolutionDueAt createdAt",
-    )
-    .sort({ resolutionDueAt: 1, dueDate: 1, updatedAt: -1 })
-    .limit(20);
-  const recentResolved =
-    activeTasks.length < 20
-      ? await Task.find({ owner: userId, status: "done" })
-          .select(
-            "ticketNumber title status priority category dueDate resolutionDueAt createdAt",
-          )
-          .sort({ completedAt: -1, updatedAt: -1 })
-          .limit(20 - activeTasks.length)
-      : [];
-  const tasks = [...activeTasks, ...recentResolved];
-  return tasks.map((task) => {
-    const normalized = serializeTicket(task);
-    return {
-      ticketNumber: String(normalized.ticketNumber),
-      title: task.title,
-      status: task.status,
-      priority: task.priority,
-      category: task.category ?? "general",
-      dueDate: task.dueDate?.toISOString() ?? null,
-      resolutionDueAt:
-        normalized.resolutionDueAt instanceof Date
-          ? normalized.resolutionDueAt.toISOString()
-          : null,
-    };
-  });
+  const tasks = await Task.find({ owner: userId })
+    .select("title status priority dueDate")
+    .sort({ status: 1, dueDate: 1, updatedAt: -1 })
+    .limit(20)
+    .lean();
+  return tasks.map((task) => ({
+    title: task.title,
+    status: task.status,
+    priority: task.priority,
+    dueDate: task.dueDate?.toISOString() ?? null,
+  }));
 };
 
 const historyOf = (conversation: HydratedDocument<IAssistantConversation>) =>
@@ -238,14 +217,14 @@ export const confirmAssistantTask: RequestHandler = async (request, response) =>
       user: user._id,
     });
     if (!exists) throw new AppError("Conversation not found", 404);
-    throw new AppError("This ticket draft is no longer pending", 409);
+    throw new AppError("This task proposal is no longer pending", 409);
   }
 
   const sourceMessage = reserved.messages.find(
     (message) => String(message._id) === messageId,
   );
   const proposal = sourceMessage?.taskProposal;
-  if (!proposal) throw new AppError("Ticket draft not found", 404);
+  if (!proposal) throw new AppError("Task proposal not found", 404);
 
   try {
     const task = await Task.create({
@@ -253,11 +232,8 @@ export const confirmAssistantTask: RequestHandler = async (request, response) =>
       title: proposal.title,
       description: proposal.description,
       priority: proposal.priority,
-      category: proposal.category,
       dueDate: proposal.dueDate,
-      source: "assistant",
       status: "todo",
-      assignee: null,
       completedAt: null,
     });
     const conversation = await AssistantConversation.findOneAndUpdate(
@@ -273,11 +249,8 @@ export const confirmAssistantTask: RequestHandler = async (request, response) =>
     if (!conversation) throw new AppError("Conversation not found", 404);
     response.status(201).json({
       success: true,
-      message: "Ticket created successfully",
-      data: {
-        conversation: serializeConversation(conversation),
-        task: serializeTicket(task),
-      },
+      message: "Task created successfully",
+      data: { conversation: serializeConversation(conversation), task },
     });
   } catch (error) {
     await AssistantConversation.updateOne(
@@ -318,7 +291,7 @@ export const dismissAssistantTask: RequestHandler = async (request, response) =>
       user: user._id,
     });
     if (!exists) throw new AppError("Conversation not found", 404);
-    throw new AppError("This ticket draft is no longer pending", 409);
+    throw new AppError("This task proposal is no longer pending", 409);
   }
   response.status(200).json({
     success: true,

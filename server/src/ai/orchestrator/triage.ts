@@ -13,7 +13,7 @@ import type { AssistantContext, ReplyAgentId, TriageDecision } from "../types.ts
 import { languageGuardrail, scopeGuardrail } from "../guardrails/index.ts";
 import { isStaffTier, resolveRoleTier } from "../policies/index.ts";
 
-/** Keywords that indicate a staff-interface guidance question. */
+/** Keywords that indicate a staff/administrative operation. */
 const STAFF_PATTERN =
   /\b(ban|unban|sperr|entsperr|promote|demote|beförder|herabstuf|admin|role|rolle|user lookup|benutzerstatus)\b/i;
 
@@ -23,10 +23,10 @@ const ACCOUNT_PATTERN =
 
 /**
  * Decides the target agent. Guardrails are evaluated before agent execution;
- * blocked requests receive a provider-backed safe response from the orchestrator.
+ * blocked requests receive a predefined response from the orchestrator.
  */
 export const triage = (message: string, context: AssistantContext): TriageDecision => {
-  // 1. Language guardrail — unsupported languages use a provider-backed refusal.
+  // 1. Language guardrail — unsupported languages are refused offline.
   if (!languageGuardrail(message).passed) {
     return {
       agent: "website-help",
@@ -36,7 +36,7 @@ export const triage = (message: string, context: AssistantContext): TriageDecisi
     };
   }
 
-  // 2. Scope guardrail — unrelated topics use a provider-backed refusal.
+  // 2. Scope guardrail — unrelated topics are refused offline.
   if (!scopeGuardrail(message).passed) {
     return {
       agent: "website-help",
@@ -62,8 +62,7 @@ const pickAgent = (
   message: string,
   tier: ReturnType<typeof resolveRoleTier>,
 ): ReplyAgentId => {
-  // Staff receive guidance for the normal interface; the AI has no account
-  // lookup or mutation capabilities.
+  // Staff account operations are only offered to admins / super admins.
   if (
     isStaffTier(tier) &&
     (STAFF_PATTERN.test(message) || ACCOUNT_PATTERN.test(message))

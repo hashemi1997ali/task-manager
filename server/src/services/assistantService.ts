@@ -4,7 +4,7 @@
  * The chat controller (and any other consumer) keeps importing `runAssistant`,
  * `createReplySuggestions`, and the `AssistantHistoryMessage` type from
  * `#services`. All logic now lives in the modular `src/ai/` architecture
- * (triage router, site guide, private request agent, staff workspace guide,
+ * (triage router, site guide, private task agent, staff account agent,
  * guardrails, providers, fallback, policies).
  *
  * This file intentionally contains no business logic — it only re-exports the

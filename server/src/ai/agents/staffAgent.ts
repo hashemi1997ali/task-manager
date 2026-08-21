@@ -1,18 +1,47 @@
 import type { AgentInput, AgentOutput } from "../types.ts";
+import { getStaffCapabilities, type RoleTier } from "../policies/index.ts";
 import type { Agent } from "./base.ts";
-import { commonPromptRules, completeOrFallback } from "./base.ts";
+import { commonPromptRules, completeOrFallback, tierOf } from "./base.ts";
+
+const commandsFor = (tier: RoleTier): string => {
+  const caps = getStaffCapabilities(tier);
+  const commands: string[] = [];
+  if (caps.viewUserStatus) commands.push("/user <email> â€” view account status");
+  if (caps.banUsers)
+    commands.push("/ban <email> <reason> â€” prepare a ban for confirmation");
+  if (caps.unbanUsers)
+    commands.push("/unban <email> â€” prepare removal of a ban for confirmation");
+  if (caps.promoteAdmin)
+    commands.push("/promote <email> â€” prepare granting the admin role");
+  if (caps.demoteAdmin)
+    commands.push("/demote <email> â€” prepare removal of the admin role");
+  return commands.join("\n");
+};
 
 const buildPrompt = (input: AgentInput): string => {
+  const tier = tierOf(input.context);
+  const caps = getStaffCapabilities(tier);
+  const scope =
+    tier === "super_admin"
+      ? "You may inspect accounts, ban/unban manageable accounts, and promote or demote administrators. Never manage a super admin."
+      : "You may inspect accounts and ban/unban regular users. Never manage an admin or super admin.";
+
   return [
     commonPromptRules(input.context.locale),
-    "You are the Staff Workspace Guide.",
-    "You provide concise guidance about using the normal Karino Desk administration interface.",
-    "You have no commands, tools, account lookup, database access, or permission to read or change any user account.",
-    "Never ask for an email address or other account identifier in order to inspect or modify an account.",
-    "Never provide slash-command syntax, confirmation commands, or claim that an account action was performed.",
-    "Account management must be completed by an authorised person through the normal Accounts interface and its standard API.",
-    "If the request requires inspecting live account data or performing an action, state that you cannot do it and direct the person to the Accounts interface.",
-  ].join("\n");
+    "You are the Staff Account Agent.",
+    `Current staff role: ${tier}.`,
+    scope,
+    "Only answer account-management questions that fit the allowed capabilities. Do not act on ordinary conversational text.",
+    "The /user command is read-only and runs immediately.",
+    "Every mutation first returns a confirmation instruction. It executes only after a separate matching /confirm-ban, /confirm-unban, /confirm-promote, or /confirm-demote command.",
+    `Available commands:\n${commandsFor(tier)}`,
+    "Backend permissions are authoritative. Never claim success unless the command result explicitly reports success.",
+    caps.promoteAdmin
+      ? ""
+      : "If asked to promote or demote an administrator, explain that only a super admin can do that.",
+  ]
+    .filter(Boolean)
+    .join("\n");
 };
 
 export const staffAgent: Agent = {

@@ -25,10 +25,6 @@ const supportReasonSchema = z.enum([
   "unresolved",
 ]);
 
-const objectIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Ticket ID must be a valid MongoDB ObjectId");
-
 export const guestAssistantSchema = z
   .object({
     message: contentSchema,
@@ -45,7 +41,7 @@ export const createChatSchema = z
   })
   .strict();
 
-export const createGuestSupportChatSchema = z
+export const createSupportChatSchema = z
   .object({
     locale: z.enum(["en", "de"]).optional().default("en"),
     history: z
@@ -54,16 +50,6 @@ export const createGuestSupportChatSchema = z
       .transform(withoutEmptyHistoryItems)
       .refine((items) => items.length > 0, "Conversation history is required"),
     reason: supportReasonSchema.optional().default("human_requested"),
-  })
-  .strict();
-
-export const createSupportChatSchema = createGuestSupportChatSchema.extend({
-  ticketId: objectIdSchema.optional(),
-});
-
-export const openTicketSupportChatSchema = z
-  .object({
-    locale: z.enum(["en", "de"]).optional().default("en"),
   })
   .strict();
 

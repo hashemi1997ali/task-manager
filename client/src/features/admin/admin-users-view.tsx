@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as Switch from "@radix-ui/react-switch";
 import { useQuery } from "@tanstack/react-query";
-import { Ban, Search, ShieldCheck } from "lucide-react";
+import { Ban, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -15,6 +15,7 @@ import { AccountStatusBadge, RoleBadge } from "@/components/ui/domain-badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/form-controls";
+import { PageHeading } from "@/components/ui/page-heading";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
 import { getUsersRequest, type UserFilters } from "@/features/admin/api";
 import { useAuth } from "@/features/auth/auth-provider";
@@ -38,121 +39,121 @@ const banReasons: BanReason[] = [
 const copy = {
   en: {
     eyebrow: "Access and safety",
-    title: "Customers & team",
-    description: "Manage customer accounts, support roles, profiles, and access.",
+    title: "Users",
+    description: "Manage user accounts, profiles, and access.",
     search: "Search by name or email…",
     allRoles: "All roles",
-    user: "Customer",
-    admin: "Support agent",
-    superAdmin: "Supervisor",
+    user: "user",
+    admin: "admin",
+    superAdmin: "super admin",
     allStates: "All account states",
     status: "Status",
     active: "Active",
     banned: "Banned",
-    loading: "Loading people…",
-    emptyTitle: "No customers or team members found",
+    loading: "Loading users…",
+    emptyTitle: "No users found",
     emptyDescription: "Try another search or filter.",
     joined: "Joined",
     role: "Role",
     actions: "Actions",
     you: "You",
-    edit: "Edit person",
-    editDescription: "Update this customer's or team member's details.",
+    edit: "Edit user",
+    editDescription: "Update the user's name or email address.",
     firstName: "First name",
     lastName: "Last name",
     email: "Email",
     save: "Save changes",
     saved: "User details saved.",
-    adminAccess: "Support agent access",
-    adminAccessDescription: "Grant or remove support workspace access.",
-    promoteTitle: "Make this person a support agent?",
+    adminAccess: "Administrator access",
+    adminAccessDescription: "Grant or remove administrator access for this user.",
+    promoteTitle: "Make this user an administrator?",
     promoteDescription: (name: string) =>
-      `${name} will be able to manage tickets, customers, and support conversations.`,
-    promoteConfirm: "Make support agent",
-    demoteTitle: "Remove support agent access?",
+      `${name} will be able to access administrator tools and manage regular users.`,
+    promoteConfirm: "Make administrator",
+    demoteTitle: "Remove administrator access?",
     demoteDescription: (name: string) =>
-      `${name} will return to a customer account and lose support workspace access.`,
+      `${name} will return to a regular user and lose administrator access.`,
     demoteConfirm: "Remove access",
-    roleEnabled: "Support agent access enabled.",
-    roleRemoved: "Support agent access removed.",
-    deleted: "Account and related data deleted.",
-    banTitle: "Ban account",
-    banDescription: "The account will be signed out on every active device.",
+    roleEnabled: "Administrator access enabled.",
+    roleRemoved: "Administrator access removed.",
+    deleted: "User and related data deleted.",
+    banTitle: "Ban user",
+    banDescription: "The user will be signed out on every active device.",
     reason: "Ban reason",
     banAction: "Ban account",
     bannedDone: "The account was banned and active sessions were revoked.",
     unbannedDone: "The account was unbanned and ban metadata was cleared.",
     unbanTitle: "Unban user",
     unbanDescription: "All ban metadata will be cleared from the account.",
-    deleteTitle: "Delete account",
+    deleteTitle: "Delete user",
     deleteDescription: (name: string) =>
-      `${name}'s account, sessions, tickets, and profile image will be permanently deleted.`,
+      `${name}'s account, sessions, tasks, and profile image will be permanently deleted.`,
     previous: "Previous",
     next: "Next",
     page: "Page",
     of: "of",
-    users: "people",
-    viewProfile: "Open profile and tickets",
+    users: "users",
+    viewProfile: "Open profile and tasks",
     bannedReason: "Reason",
   },
   de: {
     eyebrow: "Zugriff und Sicherheit",
-    title: "Kunden & Team",
-    description: "Verwalte Kundenkonten, Support-Rollen, Profile und Zugriffe.",
+    title: "Benutzer",
+    description: "Verwalte Benutzerkonten, Profile und Zugriffe.",
     search: "Nach Name oder E-Mail suchen…",
     allRoles: "Alle Rollen",
-    user: "Kunde",
-    admin: "Support-Agent",
-    superAdmin: "Leitung",
+    user: "user",
+    admin: "admin",
+    superAdmin: "super admin",
     allStates: "Alle Kontostatus",
     status: "Status",
     active: "Aktiv",
     banned: "Gesperrt",
-    loading: "Personen werden geladen…",
-    emptyTitle: "Keine Kunden oder Teammitglieder gefunden",
+    loading: "Benutzer werden geladen…",
+    emptyTitle: "Keine Benutzer gefunden",
     emptyDescription: "Versuche eine andere Suche oder einen anderen Filter.",
     joined: "Registriert",
     role: "Rolle",
     actions: "Aktionen",
     you: "Du",
-    edit: "Person bearbeiten",
-    editDescription: "Kunden- oder Teamdaten aktualisieren.",
+    edit: "Benutzer bearbeiten",
+    editDescription: "Name oder E-Mail-Adresse des Benutzers ändern.",
     firstName: "Vorname",
     lastName: "Nachname",
     email: "E-Mail",
     save: "Änderungen speichern",
     saved: "Benutzerdaten gespeichert.",
-    adminAccess: "Support-Agent-Zugriff",
+    adminAccess: "Administratorrechte",
     adminAccessDescription:
-      "Zugriff auf den Support-Arbeitsbereich vergeben oder entfernen.",
-    promoteTitle: "Diese Person zum Support-Agenten machen?",
+      "Administratorrechte für diesen Benutzer vergeben oder entfernen.",
+    promoteTitle: "Diesen Benutzer zum Administrator machen?",
     promoteDescription: (name: string) =>
-      `${name} kann Tickets, Kunden und Support-Unterhaltungen verwalten.`,
-    promoteConfirm: "Zum Support-Agenten machen",
-    demoteTitle: "Support-Agent-Zugriff entfernen?",
+      `${name} erhält Zugriff auf Administratorwerkzeuge und kann Standardbenutzer verwalten.`,
+    promoteConfirm: "Zum Administrator machen",
+    demoteTitle: "Administratorrechte entfernen?",
     demoteDescription: (name: string) =>
-      `${name} wird wieder zum Kundenkonto und verliert den Support-Zugriff.`,
+      `${name} wird wieder Standardbenutzer und verliert den Administratorzugriff.`,
     demoteConfirm: "Zugriff entfernen",
-    roleEnabled: "Support-Agent-Zugriff aktiviert.",
-    roleRemoved: "Support-Agent-Zugriff entfernt.",
-    deleted: "Konto und zugehörige Daten gelöscht.",
-    banTitle: "Konto sperren",
-    banDescription: "Das Konto wird auf allen aktiven Geräten abgemeldet.",
+    roleEnabled: "Administratorrechte aktiviert.",
+    roleRemoved: "Administratorrechte entfernt.",
+    deleted: "Benutzer und zugehörige Daten gelöscht.",
+    banTitle: "Benutzer sperren",
+    banDescription: "Der Benutzer wird auf allen aktiven Geräten abgemeldet.",
     reason: "Sperrgrund",
     banAction: "Konto sperren",
     bannedDone: "Das Konto wurde gesperrt und aktive Sitzungen wurden beendet.",
     unbannedDone: "Die Sperre und alle Sperrdaten wurden entfernt.",
     unbanTitle: "Sperre aufheben",
     unbanDescription: "Alle Sperrdaten werden aus dem Konto entfernt.",
-    deleteTitle: "Konto löschen",
+    deleteTitle: "Benutzer löschen",
     deleteDescription: (name: string) =>
-      `Konto, Sitzungen, Tickets und Anhänge von ${name} werden dauerhaft gelöscht.`,
+      `Konto, Sitzungen, Aufgaben und Anhänge von ${name} werden dauerhaft gelöscht.`,
     previous: "Zurück",
     next: "Weiter",
     page: "Seite",
     of: "von",
-    users: "Personen",
-    viewProfile: "Profil und Tickets öffnen",
+    users: "Benutzer",
+    viewProfile: "Profil und Aufgaben öffnen",
     bannedReason: "Grund",
   },
 } as const;
@@ -208,30 +209,23 @@ export function EditUserDialog({
         title={t.edit}
         description={t.editDescription}
       >
-        <form className="grid gap-4" onSubmit={form.handleSubmit(submitChanges)}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t.firstName} error={form.formState.errors.firstName?.message}>
-              <Input {...form.register("firstName")} autoComplete="off" />
-            </Field>
-            <Field label={t.lastName} error={form.formState.errors.lastName?.message}>
-              <Input {...form.register("lastName")} autoComplete="off" />
-            </Field>
-          </div>
+        <form className="space-y-2" onSubmit={form.handleSubmit(submitChanges)}>
+          <Field label={t.firstName} error={form.formState.errors.firstName?.message}>
+            <Input {...form.register("firstName")} autoComplete="off" />
+          </Field>
+          <Field label={t.lastName} error={form.formState.errors.lastName?.message}>
+            <Input {...form.register("lastName")} autoComplete="off" />
+          </Field>
           <Field label={t.email} error={form.formState.errors.email?.message}>
             <Input {...form.register("email")} type="email" autoComplete="off" />
           </Field>
           {canChangeAdminRole && (
-            <div className="desk-panel-soft flex min-w-0 items-center justify-between gap-4 p-4">
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="desk-icon-well shrink-0 text-[var(--primary)]">
-                  <ShieldCheck className="size-4" />
-                </span>
-                <div className="min-w-0">
-                  <p className="desk-section-title">{t.adminAccess}</p>
-                  <p className="mt-0.5 text-xs leading-5 text-[var(--muted)]">
-                    {t.adminAccessDescription}
-                  </p>
-                </div>
+            <div className="flex min-w-0 items-center justify-between gap-4 rounded-2xl border bg-[var(--surface-muted)] p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-black">{t.adminAccess}</p>
+                <p className="mt-0.5 text-xs leading-5 text-[var(--muted)]">
+                  {t.adminAccessDescription}
+                </p>
               </div>
               <Switch.Root
                 checked={selectedAdminRole}
@@ -244,8 +238,8 @@ export function EditUserDialog({
               </Switch.Root>
             </div>
           )}
-          <div className="flex justify-end border-t border-[var(--border)] pt-4">
-            <Button type="submit" loading={loading} className="w-full sm:w-auto">
+          <div className="flex justify-end pt-2">
+            <Button type="submit" loading={loading}>
               {t.save}
             </Button>
           </div>
@@ -295,8 +289,8 @@ export function BanUserDialog({
       title={t.banTitle}
       description={t.banDescription}
     >
-      <div className="grid gap-4">
-        <label className="desk-panel-soft grid gap-2 p-4 text-sm font-bold">
+      <div className="space-y-4">
+        <label className="grid gap-2 text-sm font-bold">
           {t.reason}
           <Select
             value={reason}
@@ -309,13 +303,8 @@ export function BanUserDialog({
             ))}
           </Select>
         </label>
-        <div className="flex justify-end border-t border-[var(--border)] pt-4">
-          <Button
-            className="w-full sm:w-auto"
-            variant="danger"
-            loading={loading}
-            onClick={() => void onBan(reason)}
-          >
+        <div className="flex justify-end">
+          <Button variant="danger" loading={loading} onClick={() => void onBan(reason)}>
             <Ban className="size-4" />
             {t.banAction}
           </Button>
@@ -356,39 +345,12 @@ export function AdminUsersView() {
   const pagination = usersQuery.data?.pagination;
 
   return (
-    <div className="desk-grid-glow space-y-5">
-      <header
-        className="desk-page-header desk-panel relative overflow-hidden p-5 sm:p-7"
-        style={{ marginBottom: 0 }}
-      >
-        <div className="relative z-10 flex w-full flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div className="max-w-2xl">
-            <p className="desk-eyebrow">{t.eyebrow}</p>
-            <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-              {t.title}
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)] sm:text-base">
-              {t.description}
-            </p>
-          </div>
-          {pagination && (
-            <div className="desk-stat min-w-36 p-3">
-              <span className="text-xs font-bold text-[var(--muted)]">{t.users}</span>
-              <strong className="mt-1 block text-2xl font-black tracking-tight">
-                {formatNumber(pagination.total, intlLocale)}
-              </strong>
-            </div>
-          )}
-        </div>
-        <div
-          className="pointer-events-none absolute -end-16 -top-20 size-56 rounded-full bg-[var(--primary)]/10 blur-3xl"
-          aria-hidden="true"
-        />
-      </header>
+    <div>
+      <PageHeading title={t.title} description={t.description} />
 
-      <section className="desk-toolbar gap-3 p-3">
-        <label className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-[var(--muted)]" />
+      <section className="mt-6 grid gap-3 rounded-[var(--container-radius)] border bg-[var(--surface)] p-3 md:grid-cols-[1fr_12rem_13rem]">
+        <label className="relative">
+          <Search className="pointer-events-none absolute start-3.5 top-4 size-4 text-[var(--muted)]" />
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -397,7 +359,6 @@ export function AdminUsersView() {
           />
         </label>
         <Select
-          className="md:w-48"
           value={role}
           onChange={(event) => {
             setRole(event.target.value as UserFilters["role"]);
@@ -410,7 +371,6 @@ export function AdminUsersView() {
           <option value="super_admin">{t.superAdmin}</option>
         </Select>
         <Select
-          className="md:w-52"
           value={banned}
           onChange={(event) => {
             setBanned(event.target.value as UserFilters["banned"]);
@@ -423,25 +383,25 @@ export function AdminUsersView() {
         </Select>
       </section>
 
-      <div>
+      <div className="mt-6">
         {usersQuery.isPending ? (
-          <Card className="desk-panel">
+          <Card>
             <LoadingState label={t.loading} />
           </Card>
         ) : usersQuery.isError ? (
-          <Card className="desk-panel p-5">
+          <Card className="p-5">
             <ErrorState
               message={getErrorMessage(usersQuery.error, locale)}
               retry={() => void usersQuery.refetch()}
             />
           </Card>
         ) : users.length === 0 ? (
-          <Card className="desk-panel p-5">
+          <Card className="p-5">
             <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
           </Card>
         ) : (
           <>
-            <div className="grid items-start gap-3 lg:grid-cols-2 xl:hidden">
+            <div className="grid items-start gap-4 lg:grid-cols-2 xl:hidden">
               {users.map((user) => {
                 const id = getId(user);
                 const self = id === currentUser?.id || id === currentUser?._id;
@@ -454,10 +414,10 @@ export function AdminUsersView() {
                 return (
                   <Card
                     key={id}
-                    className="desk-panel group relative overflow-hidden p-0 transition duration-200 hover:-translate-y-0.5 hover:border-[var(--primary)]/40 hover:shadow-lg"
+                    className="group relative overflow-hidden p-4 transition-colors duration-200 hover:border-[var(--primary)]/50"
                   >
                     <span
-                      className={`absolute inset-y-0 start-0 w-1 ${
+                      className={`absolute inset-y-0 left-0 w-1.5 ${
                         isBanned
                           ? "bg-rose-700 dark:bg-rose-300"
                           : superAdmin
@@ -468,36 +428,8 @@ export function AdminUsersView() {
                       }`}
                       aria-hidden="true"
                     />
-                    <div className="flex items-start justify-between gap-4 p-5 pb-4">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <UserAvatar
-                          user={user}
-                          className="size-12 ring-2 ring-[var(--surface-muted)]"
-                          imageSizes="48px"
-                        />
-                        <div className="flex min-h-11 min-w-0 flex-1 flex-col justify-center">
-                          <Link
-                            href={`/admin/users/${id}`}
-                            className="focus-ring min-w-0 truncate rounded-[var(--control-radius)] text-sm font-bold hover:text-[var(--primary)]"
-                            title={t.viewProfile}
-                            dir="auto"
-                          >
-                            {user.firstName} {user.lastName}
-                            {self && (
-                              <span className="ms-1 text-xs font-normal text-[var(--muted)]">
-                                ({t.you})
-                              </span>
-                            )}
-                          </Link>
-                          <p
-                            className="mt-1 truncate text-xs text-[var(--muted)]"
-                            dir="ltr"
-                            title={user.email}
-                          >
-                            {user.email}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <RoleBadge role={roleValue}>{roleLabel}</RoleBadge>
                       <AccountStatusBadge
                         banned={isBanned}
                         title={
@@ -509,18 +441,37 @@ export function AdminUsersView() {
                         {isBanned ? t.banned : t.active}
                       </AccountStatusBadge>
                     </div>
-                    <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface-muted)]/45 px-5 py-3">
-                      <span className="text-xs font-semibold text-[var(--muted)]">
-                        {t.role}
-                      </span>
-                      <RoleBadge role={roleValue}>{roleLabel}</RoleBadge>
+                    <div className="mt-4 flex min-w-0 items-center gap-3">
+                      <UserAvatar user={user} className="size-11" imageSizes="44px" />
+                      <div className="flex min-h-11 min-w-0 flex-1 flex-col justify-center">
+                        <Link
+                          href={`/admin/users/${id}`}
+                          className="focus-ring min-w-0 truncate rounded-[var(--control-radius)] text-sm font-bold hover:text-[var(--primary)]"
+                          title={t.viewProfile}
+                          dir="auto"
+                        >
+                          {user.firstName} {user.lastName}
+                          {self && (
+                            <span className="ms-1 text-xs font-normal text-[var(--muted)]">
+                              ({t.you})
+                            </span>
+                          )}
+                        </Link>
+                        <p
+                          className="mt-1 truncate text-xs text-[var(--muted)]"
+                          dir="ltr"
+                          title={user.email}
+                        >
+                          {user.email}
+                        </p>
+                      </div>
                     </div>
                   </Card>
                 );
               })}
             </div>
-            <Card className="desk-panel desk-table-shell hidden overflow-hidden p-0 xl:block">
-              <div className="grid grid-cols-[minmax(12rem,1.3fr)_minmax(12rem,1.25fr)_8rem_8rem] gap-3 border-b bg-[var(--surface-muted)]/70 px-5 py-3.5 text-[0.68rem] font-black tracking-[0.08em] text-[var(--muted)] uppercase">
+            <Card className="hidden overflow-hidden xl:block">
+              <div className="grid grid-cols-[minmax(12rem,1.3fr)_minmax(12rem,1.25fr)_7rem_7rem] gap-3 border-b bg-[var(--surface-muted)] px-4 py-3 text-xs font-semibold text-[var(--muted)]">
                 <span>{t.users}</span>
                 <span>{t.email}</span>
                 <span>{t.role}</span>
@@ -538,10 +489,10 @@ export function AdminUsersView() {
                   return (
                     <article
                       key={id}
-                      className="relative grid min-w-0 grid-cols-[minmax(12rem,1.3fr)_minmax(12rem,1.25fr)_8rem_8rem] items-center gap-3 overflow-hidden px-5 py-4 transition-colors hover:bg-[var(--surface-muted)]/70"
+                      className="relative grid min-w-0 grid-cols-[minmax(12rem,1.3fr)_minmax(12rem,1.25fr)_7rem_7rem] items-center gap-3 overflow-hidden p-4 transition-colors hover:bg-[var(--surface-muted)]"
                     >
                       <span
-                        className={`absolute inset-y-0 start-0 w-1 ${
+                        className={`absolute inset-y-0 left-0 w-1.5 ${
                           isBanned
                             ? "bg-rose-700 dark:bg-rose-300"
                             : superAdmin
@@ -553,11 +504,7 @@ export function AdminUsersView() {
                         aria-hidden="true"
                       />
                       <div className="flex min-w-0 items-center gap-3">
-                        <UserAvatar
-                          user={user}
-                          className="size-10 ring-2 ring-[var(--surface-muted)]"
-                          imageSizes="40px"
-                        />
+                        <UserAvatar user={user} className="size-9" imageSizes="36px" />
                         <Link
                           href={`/admin/users/${id}`}
                           className="focus-ring min-w-0 truncate rounded text-sm font-semibold hover:text-[var(--primary)]"
@@ -598,7 +545,7 @@ export function AdminUsersView() {
       </div>
 
       {pagination && pagination.totalPages > 1 && (
-        <div className="desk-toolbar flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+        <div className="mt-7 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-[var(--surface)] p-3 text-sm">
           <span className="text-[var(--muted)]">
             {t.page} {formatNumber(pagination.page, intlLocale)} {t.of}{" "}
             {formatNumber(pagination.totalPages, intlLocale)} ·{" "}

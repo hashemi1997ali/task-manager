@@ -10,9 +10,9 @@ export function LoadingState({ label }: { label?: string }) {
   const resolvedLabel =
     label ?? (locale === "de" ? "Daten werden geladen …" : "Loading data …");
   return (
-    <div className="desk-panel grid min-h-56 place-items-center" role="status">
-      <div className="grid justify-items-center gap-3 text-sm font-semibold text-[var(--muted)]">
-        <span className="size-9 animate-spin rounded-full border-3 border-[var(--primary-soft)] border-t-[var(--primary)] shadow-[0_0_20px_var(--primary-glow)]" />
+    <div className="grid min-h-56 place-items-center" role="status">
+      <div className="grid justify-items-center gap-3 text-sm text-slate-500">
+        <span className="size-8 animate-spin rounded-full border-3 border-[var(--primary-soft)] border-t-[var(--primary)]" />
         {resolvedLabel}
       </div>
     </div>
@@ -29,9 +29,9 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="desk-panel desk-grid-glow grid min-h-64 place-items-center border-dashed p-8 text-center">
+    <div className="grid min-h-56 place-items-center rounded-[var(--container-radius)] border border-dashed bg-[color-mix(in_srgb,var(--surface)_75%,transparent)] p-8 text-center">
       <div className="grid max-w-sm justify-items-center gap-3">
-        <span className="desk-icon-well size-14 rounded-[1.1rem]">
+        <span className="grid size-12 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]">
           <Inbox className="size-6" />
         </span>
         <h3 className="font-bold text-[var(--foreground)]">{title}</h3>
@@ -45,7 +45,7 @@ export function EmptyState({
 export function ErrorState({ message, retry }: { message: string; retry?: () => void }) {
   const { locale } = usePreferences();
   return (
-    <div className="grid min-h-48 place-items-center rounded-[var(--container-radius)] border border-rose-200 bg-[linear-gradient(145deg,rgba(255,241,242,.88),rgba(255,255,255,.72))] p-6 text-center shadow-[var(--shadow-panel)] dark:border-rose-500/30 dark:bg-[linear-gradient(145deg,rgba(80,24,37,.38),rgba(19,23,42,.9))]">
+    <div className="grid min-h-48 place-items-center rounded-2xl border border-rose-100 bg-rose-50/60 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
       <div className="grid justify-items-center gap-3">
         <AlertCircle className="size-7 text-rose-600 dark:text-rose-300" />
         <p className="text-sm text-rose-800 dark:text-rose-200">{message}</p>

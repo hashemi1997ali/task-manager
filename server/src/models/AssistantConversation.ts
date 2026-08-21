@@ -1,11 +1,6 @@
 import { model, Schema, type Types } from "mongoose";
 
-import {
-  TASK_PRIORITIES,
-  TICKET_CATEGORIES,
-  type TaskPriority,
-  type TicketCategory,
-} from "./Task.ts";
+import { TASK_PRIORITIES, type TaskPriority } from "./Task.ts";
 
 export const ASSISTANT_CONVERSATION_LOCALES = ["en", "de"] as const;
 export type AssistantConversationLocale = (typeof ASSISTANT_CONVERSATION_LOCALES)[number];
@@ -22,7 +17,6 @@ export interface IAssistantTaskProposal {
   title: string;
   description: string;
   priority: TaskPriority;
-  category: TicketCategory;
   dueDate: Date | null;
   status: AssistantProposalStatus;
   taskId: Types.ObjectId | null;
@@ -54,12 +48,6 @@ const taskProposalSchema = new Schema<IAssistantTaskProposal>(
       enum: TASK_PRIORITIES,
       required: true,
       default: "medium",
-    },
-    category: {
-      type: String,
-      enum: TICKET_CATEGORIES,
-      required: true,
-      default: "general",
     },
     dueDate: { type: Date, default: null },
     status: {
@@ -133,7 +121,7 @@ const assistantConversationSchema = new Schema<IAssistantConversation>(
 assistantConversationSchema.index({ user: 1, updatedAt: -1 });
 
 /**
- * Private request-assistant conversations live in a dedicated collection.
+ * Private task-assistant conversations live in a dedicated collection.
  * No staff router exposes this model; every query in the assistant controller
  * is scoped by both conversation id and the authenticated owner id.
  */

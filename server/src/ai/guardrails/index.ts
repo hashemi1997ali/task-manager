@@ -21,14 +21,110 @@ import type { AssistantContext, AssistantLocale, GuardrailResult } from "../type
 
 /**
  * Detects whether the user message is written in a language other than
- * English or German. We deliberately use only a conservative Unicode-script
- * signal; vocabulary-density checks reject valid terse support descriptions
- * such as product names, error codes, and technical symptoms.
+ * English or German.  We use a lightweight heuristic based on Unicode
+ * script ranges and common stop-words rather than a full language detector
+ * to avoid adding a runtime dependency.
  *
- * If the message is clearly in another script (Cyrillic, CJK, Arabic, …),
- * the guardrail flags it so the orchestrator can return a provider-backed
- * safe reply or the explicit disabled-assistance state.
+ * If the message is clearly in another script (Cyrillic, CJK, Arabic, …)
+ * or contains a high density of non-English/German words, the guardrail
+ * flags it so the orchestrator can return a polite predefined refusal.
  */
+const EN_DE_STOPWORDS = new Set([
+  // English
+  "the",
+  "a",
+  "an",
+  "is",
+  "are",
+  "was",
+  "were",
+  "i",
+  "you",
+  "he",
+  "she",
+  "we",
+  "they",
+  "and",
+  "or",
+  "but",
+  "not",
+  "to",
+  "of",
+  "in",
+  "on",
+  "at",
+  "for",
+  "with",
+  "my",
+  "your",
+  "this",
+  "that",
+  "help",
+  "how",
+  "what",
+  "can",
+  "do",
+  "does",
+  "please",
+  "thank",
+  "account",
+  "login",
+  "password",
+  "task",
+  "support",
+  "admin",
+  "ban",
+  "user",
+  "email",
+  "register",
+  // German
+  "der",
+  "die",
+  "das",
+  "ein",
+  "eine",
+  "ist",
+  "sind",
+  "war",
+  "waren",
+  "ich",
+  "du",
+  "er",
+  "sie",
+  "wir",
+  "und",
+  "oder",
+  "aber",
+  "nicht",
+  "zu",
+  "von",
+  "in",
+  "an",
+  "auf",
+  "für",
+  "mit",
+  "mein",
+  "dein",
+  "dies",
+  "das",
+  "hilfe",
+  "wie",
+  "was",
+  "kann",
+  "machen",
+  "bitte",
+  "danke",
+  "konto",
+  "anmeldung",
+  "passwort",
+  "aufgabe",
+  "support",
+  "administrator",
+  "sperre",
+  "benutzer",
+  "email",
+  "registrieren",
+]);
 
 /**
  * Unicode script ranges for scripts we do NOT support.
@@ -78,14 +174,23 @@ export const detectWrongLanguage = (message: string): boolean => {
   // If more than 20 % of letters are in a non-Latin script, reject.
   if (totalLetters > 0 && nonLatinCount / totalLetters > 0.2) return true;
 
+  // Word-density heuristic: if fewer than 15 % of words are recognisable
+  // English/German stop-words AND the message has 4+ words, treat as foreign.
+  const words = trimmed.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length >= 4) {
+    const known = words.filter((w) =>
+      EN_DE_STOPWORDS.has(w.replace(/[^a-zäöüß]/g, "")),
+    ).length;
+    if (known / words.length < 0.15) return true;
+  }
+
   return false;
 };
 
 /**
  * Language guardrail — applied to the **inbound** user message.
- * If the message is in an unsupported language the orchestrator verifies the
- * configured provider before returning a safe refusal. Provider failure uses
- * the normal disabled-assistance state.
+ * If the message is in an unsupported language the orchestrator returns a
+ * polite predefined refusal without invoking a provider.
  */
 export const languageGuardrail = (message: string): GuardrailResult => {
   if (detectWrongLanguage(message)) {
@@ -102,7 +207,7 @@ export const languageGuardrail = (message: string): GuardrailResult => {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Keywords that are clearly outside the scope of a customer-support desk.
+ * Keywords that are clearly outside the scope of a task-management website.
  * If the user message is *primarily* about these topics the scope guardrail
  * flags it so the agent can politely decline.
  */
@@ -192,9 +297,11 @@ export const scopeGuardrail = (message: string): GuardrailResult => {
 /**
  * Permission guardrail — applied to the **inbound** user message.
  *
- * This guardrail does NOT grant any account access. AI agents cannot inspect
- * or mutate accounts; all such work remains in the normal administrative UI
- * and API, where backend role checks are authoritative.
+ * This guardrail does NOT block the message; instead it annotates the
+ * context so agents know whether the user is allowed to perform account
+ * or staff operations.  The actual permission enforcement happens in the
+ * backend services (`banUser`, `setAdministratorRole`, `canManageBan`, …)
+ * which the agents call — the AI never grants permissions on its own.
  *
  * The guardrail returns `passed: true` always; it is included for
  * completeness and future extensibility (e.g. logging denied attempts).

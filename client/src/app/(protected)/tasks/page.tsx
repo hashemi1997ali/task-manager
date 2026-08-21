@@ -1,14 +1,21 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { Suspense } from "react";
 
-export default async function LegacyTasksPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(await searchParams)) {
-    if (Array.isArray(value)) value.forEach((item) => params.append(key, item));
-    else if (value) params.set(key, value);
-  }
-  redirect(`/tickets${params.size ? `?${params.toString()}` : ""}`);
+import { TasksView } from "@/features/tasks/tasks-view";
+import { LOCALE_COOKIE_NAME, parseLocale } from "@/lib/preferences";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = parseLocale((await cookies()).get(LOCALE_COOKIE_NAME)?.value);
+  return { title: locale === "de" ? "Meine Aufgaben" : "My tasks" };
+}
+
+export default function TasksPage() {
+  return (
+    <Suspense
+      fallback={<div className="h-96 animate-pulse rounded-2xl bg-[var(--surface)]" />}
+    >
+      <TasksView />
+    </Suspense>
+  );
 }

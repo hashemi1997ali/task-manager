@@ -1,12 +1,6 @@
 import { z } from "zod";
 
-import {
-  BAN_REASONS,
-  TASK_PRIORITIES,
-  TASK_STATUSES,
-  TICKET_CATEGORIES,
-  TICKET_SOURCES,
-} from "#models";
+import { BAN_REASONS, TASK_PRIORITIES, TASK_STATUSES } from "#models";
 import { updateTaskSchema } from "./taskSchema.ts";
 
 const objectIdSchema = z
@@ -28,15 +22,6 @@ const optionalSearchSchema = z.preprocess(
   z.string().trim().max(100).optional(),
 );
 
-const dateTimeSchema = z.iso
-  .datetime({ offset: true })
-  .transform((value) => new Date(value));
-
-const nullableOptionalDateTimeSchema = z.preprocess(
-  (value) => (value === "" ? null : value),
-  z.union([dateTimeSchema, z.null()]).optional(),
-);
-
 const emailSchema = z
   .string()
   .trim()
@@ -55,33 +40,11 @@ export const adminTaskQuerySchema = z
     search: optionalSearchSchema,
     status: z.enum(TASK_STATUSES).optional(),
     priority: z.enum(TASK_PRIORITIES).optional(),
-    category: z.enum(TICKET_CATEGORIES).optional(),
-    source: z.enum(TICKET_SOURCES).optional(),
-    attention: z
-      .enum(["first-response-breached", "resolution-breached", "requested-overdue"])
-      .optional(),
     ownerId: objectIdSchema.optional(),
-    assigneeId: objectIdSchema.optional(),
-    unassigned: z
-      .preprocess(
-        (value) => (value === "" ? undefined : value),
-        z.enum(["true", "false"]).optional(),
-      )
-      .transform((value) => (value === undefined ? undefined : value === "true")),
     page: pageSchema,
     limit: limitSchema,
     sortBy: z
-      .enum([
-        "createdAt",
-        "updatedAt",
-        "dueDate",
-        "firstResponseDueAt",
-        "resolutionDueAt",
-        "title",
-        "ticketNumber",
-        "status",
-        "priority",
-      ])
+      .enum(["createdAt", "updatedAt", "dueDate", "title", "status", "priority"])
       .optional()
       .default("createdAt"),
     order: z.enum(["asc", "desc"]).optional().default("desc"),
@@ -129,14 +92,7 @@ export const adminBanSchema = z
   })
   .strict();
 
-export const adminUpdateTaskSchema = updateTaskSchema
-  .extend({
-    status: z.enum(TASK_STATUSES).optional(),
-    assignee: z.union([objectIdSchema, z.null()]).optional(),
-    firstResponseDueAt: nullableOptionalDateTimeSchema,
-    resolutionDueAt: nullableOptionalDateTimeSchema,
-  })
-  .strict();
+export const adminUpdateTaskSchema = updateTaskSchema;
 
 export type AdminTaskQuery = z.infer<typeof adminTaskQuerySchema>;
 export type AdminUserTaskQuery = z.infer<typeof adminUserTaskQuerySchema>;

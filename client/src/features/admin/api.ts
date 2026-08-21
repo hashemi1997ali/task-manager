@@ -23,17 +23,6 @@ export interface AdminOverview {
   waitingSupport: number;
   unansweredContacts: number;
   bannedUsers: number;
-  totalTickets: number;
-  openTickets: number;
-  overdueRequestedDeadlines: number;
-  waitingCustomerTickets: number;
-  urgentOpenTickets: number;
-  unassignedTickets: number;
-  firstResponseBreaches: number;
-  resolutionBreaches: number;
-  breachedSlaTickets: number;
-  resolvedToday: number;
-  averageFirstResponseMinutes: number | null;
   weeklyProgress: Array<{ date: string; completed: number }>;
 }
 
