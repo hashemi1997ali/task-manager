@@ -112,9 +112,7 @@ export function TicketSourceBadge({
   children: ReactNode;
   className?: string;
 }) {
-  return (
-    <span className={cn(base, ticketSourceClasses[source], className)}>{children}</span>
-  );
+  return <span className={cn(base, ticketSourceClasses[source], className)}>{children}</span>;
 }
 
 export function RoleBadge({

@@ -3,25 +3,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpRight,
-  CalendarClock,
   Check,
   ChevronLeft,
   ChevronRight,
   CircleStop,
-  Clock3,
   Headphones,
-  Inbox,
   Lightbulb,
-  Mail,
-  MessagesSquare,
   Send,
-  ShieldCheck,
-  TicketCheck,
-  UserRound,
   WandSparkles,
 } from "lucide-react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -29,12 +19,8 @@ import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Card } from "@/components/ui/card";
-import {
-  ChatStatusBadge,
-  TaskPriorityBadge,
-  TaskStatusBadge,
-  UserTypeBadge,
-} from "@/components/ui/domain-badge";
+import { ChatStatusBadge, UserTypeBadge } from "@/components/ui/domain-badge";
+import { PageHeading } from "@/components/ui/page-heading";
 import { ErrorState, LoadingState } from "@/components/ui/states";
 import { useAuth } from "@/features/auth/auth-provider";
 import { ChatMessageBubble } from "@/features/chat/chat-message-bubble";
@@ -56,8 +42,6 @@ import { getErrorMessage } from "@/lib/api-error";
 import {
   getAssistantAgentLabel,
   getLocalizedSupportSystemMessage,
-  getTaskPriorityLabel,
-  getTaskStatusLabel,
 } from "@/lib/domain-labels";
 import type { SupportChat, User } from "@/lib/types";
 import { cn, getId } from "@/lib/utils";
@@ -81,13 +65,12 @@ const copy = {
     hideSuggestions: "Hide suggested replies",
     improve: "Improve draft",
     improved: "Your draft was improved.",
-    profile: "Open customer profile",
-    tasks: "Open this customer's tickets",
-    linkedTicket: "Linked ticket",
+    profile: "Open user profile",
+    tasks: "Open this user's tasks",
     waiting: "Waiting",
     active: "Active",
     super: "Super Support required",
-    userDetails: "Customer details",
+    userDetails: "User details",
     banned: "Banned",
     noSelection: "Select a conversation from the inbox.",
     guest: "Guest",
@@ -96,9 +79,6 @@ const copy = {
     endDescription: "The conversation will be closed for both sides.",
     allHistory: "All chat history",
     supportQueue: "Support queue",
-    visible: "Visible",
-    waitingCount: "Waiting",
-    activeCount: "Active",
     assistantStatus: "AI Assistant",
     endedStatus: "Ended",
     previous: "Previous",
@@ -109,13 +89,6 @@ const copy = {
       "The current Support Agent will leave the conversation and you will become the assigned Super Support Agent.",
     takeoverConfirm: "Join and replace",
     superQueue: "Super",
-    conversationContext: "Conversation context",
-    assignedTo: "Assigned agent",
-    unassigned: "Unassigned",
-    opened: "Opened",
-    latestActivity: "Latest activity",
-    replyLocked: "Join this conversation before replying.",
-    composerHint: "Enter to send · Shift + Enter for a new line",
     historyRole: {
       user: "User",
       admin: "Admin",
@@ -140,13 +113,12 @@ const copy = {
     hideSuggestions: "Antwortvorschläge ausblenden",
     improve: "Entwurf verbessern",
     improved: "Dein Entwurf wurde verbessert.",
-    profile: "Kundenprofil öffnen",
-    tasks: "Tickets dieses Kunden öffnen",
-    linkedTicket: "Verknüpftes Ticket",
+    profile: "Benutzerprofil öffnen",
+    tasks: "Aufgaben dieses Benutzers öffnen",
     waiting: "Wartet",
     active: "Aktiv",
     super: "Super-Support erforderlich",
-    userDetails: "Kundendaten",
+    userDetails: "Benutzerdaten",
     banned: "Gesperrt",
     noSelection: "Wähle eine Unterhaltung aus dem Posteingang.",
     guest: "Gast",
@@ -155,9 +127,6 @@ const copy = {
     endDescription: "Die Unterhaltung wird für beide Seiten geschlossen.",
     allHistory: "Gesamter Chatverlauf",
     supportQueue: "Support-Warteschlange",
-    visible: "Sichtbar",
-    waitingCount: "Wartend",
-    activeCount: "Aktiv",
     assistantStatus: "AI Assistant",
     endedStatus: "Beendet",
     previous: "Zurück",
@@ -168,13 +137,6 @@ const copy = {
       "Der aktuelle Support-Agent verlässt die Unterhaltung und du wirst als Super-Support-Agent zugewiesen.",
     takeoverConfirm: "Beitreten und übernehmen",
     superQueue: "Super",
-    conversationContext: "Gesprächskontext",
-    assignedTo: "Zugewiesener Agent",
-    unassigned: "Nicht zugewiesen",
-    opened: "Eröffnet",
-    latestActivity: "Letzte Aktivität",
-    replyLocked: "Tritt dieser Unterhaltung bei, bevor du antwortest.",
-    composerHint: "Enter zum Senden · Umschalt + Enter für eine neue Zeile",
     historyRole: {
       user: "Benutzer",
       admin: "Admin",
@@ -195,16 +157,12 @@ const getChatUser = (
 };
 
 export function StaffSupportView() {
-  const searchParams = useSearchParams();
-  const requestedChatId = /^[a-f\d]{24}$/i.test(searchParams.get("chat") ?? "")
-    ? searchParams.get("chat")
-    : null;
   const { locale, intlLocale } = usePreferences();
   const t = copy[locale];
   const { user: currentUser, isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [mobileThreadOpen, setMobileThreadOpen] = useState(Boolean(requestedChatId));
+  const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [confirmEnd, setConfirmEnd] = useState(false);
@@ -224,20 +182,10 @@ export function StaffSupportView() {
     refetchInterval: 4_000,
   });
   const chats = useMemo(() => chatsQuery.data?.chats ?? [], [chatsQuery.data?.chats]);
-  const queueCounts = useMemo(
-    () => ({
-      visible: chats.length,
-      waiting: chats.filter((chat) => chat.status === "open").length,
-      active: chats.filter((chat) => chat.status === "active").length,
-    }),
-    [chats],
-  );
   const effectiveSelectedId =
     selectedId && chats.some((chat) => chat.id === selectedId)
       ? selectedId
-      : requestedChatId && chats.some((chat) => chat.id === requestedChatId)
-        ? requestedChatId
-        : (chats[0]?.id ?? null);
+      : (chats[0]?.id ?? null);
   const selected = chats.find((chat) => chat.id === effectiveSelectedId) ?? null;
   const chatUser = getChatUser(selected);
   const selectedUserType = chatUser?.roles.includes("super_admin")
@@ -287,25 +235,12 @@ export function StaffSupportView() {
     setSelectedId(chat.id);
   };
 
-  const invalidateTicketCaches = () => {
-    void Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["tickets"] }),
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
-      queryClient.invalidateQueries({ queryKey: ["admin", "tickets"] }),
-      queryClient.invalidateQueries({ queryKey: ["admin", "overview"] }),
-      queryClient.invalidateQueries({ queryKey: ["admin", "user"] }),
-    ]);
-  };
-
   const mutationOptions = {
     onError: (error: Error) => toast.error(getErrorMessage(error, locale)),
   };
   const claimMutation = useMutation({
     mutationFn: claimStaffChatRequest,
-    onSuccess: (chat) => {
-      updateCache(chat);
-      invalidateTicketCaches();
-    },
+    onSuccess: updateCache,
     ...mutationOptions,
   });
   const sendMutation = useMutation({
@@ -315,7 +250,6 @@ export function StaffSupportView() {
       updateCache(chat);
       setMessage("");
       setSuggestions([]);
-      invalidateTicketCaches();
     },
     ...mutationOptions,
   });
@@ -323,7 +257,6 @@ export function StaffSupportView() {
     mutationFn: transferStaffChatRequest,
     onSuccess: async (chat) => {
       updateCache(chat);
-      invalidateTicketCaches();
       toast.success(t.transfer);
       await chatsQuery.refetch();
     },
@@ -332,7 +265,6 @@ export function StaffSupportView() {
   const endMutation = useMutation({
     mutationFn: endStaffChatRequest,
     onSuccess: async () => {
-      invalidateTicketCaches();
       toast.success(t.end);
       setConfirmEnd(false);
       setSelectedId(null);
@@ -358,7 +290,7 @@ export function StaffSupportView() {
 
   const send = () => {
     const text = message.trim();
-    if (!selected || !canReply || !text || sendMutation.isPending) return;
+    if (!selected || !canReply || !text) return;
     sendMutation.mutate({ id: selected.id, text });
   };
   const threadOpen = mobileThreadOpen || chats.length === 0;
@@ -369,24 +301,20 @@ export function StaffSupportView() {
         <PageHeading title={t.title} description={t.description} />
 
         {chatsQuery.isPending ? (
-          <div className="mt-6">
+          <div className="mt-8">
             <LoadingState label={t.loading} />
           </div>
         ) : chatsQuery.isError ? (
-          <div className="mt-6">
+          <div className="mt-8">
             <ErrorState
               message={getErrorMessage(chatsQuery.error, locale)}
               retry={() => void chatsQuery.refetch()}
             />
           </div>
         ) : chats.length === 0 ? (
-          <Card className="desk-panel desk-grid-glow mt-5 grid min-h-64 place-items-center overflow-hidden p-8 text-center text-sm text-[var(--muted)] shadow-sm">
-            <div>
-              <span className="desk-icon-well mx-auto grid size-14 place-items-center rounded-2xl border bg-[var(--primary-soft)] text-[var(--primary)]">
-                <Headphones className="size-6" />
-              </span>
-              <p className="mt-4 max-w-sm leading-6">{t.empty}</p>
-            </div>
+          <Card className="mt-8 grid min-h-52 place-items-center p-8 text-center text-sm text-[var(--muted)]">
+            <Headphones className="mb-3 size-8 text-[var(--primary)]" />
+            {t.empty}
           </Card>
         ) : (
           <div
@@ -398,7 +326,7 @@ export function StaffSupportView() {
           >
             <aside
               className={cn(
-                "min-h-0 min-w-0 flex-col border-r bg-[color-mix(in_srgb,var(--surface-muted)_52%,var(--surface))]",
+                "min-h-0 min-w-0 flex-col border-r",
                 threadOpen ? "max-xl:hidden xl:flex" : "flex",
               )}
             >
@@ -407,7 +335,7 @@ export function StaffSupportView() {
                   {isSuperAdmin ? t.allHistory : t.supportQueue}
                 </h2>
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <div className="min-h-0 flex-1 overflow-y-auto">
                 {chats.map((chat) => {
                   const owner = typeof chat.user === "string" ? null : chat.user;
                   const statusText =
@@ -464,7 +392,7 @@ export function StaffSupportView() {
                 })}
               </div>
               {chatsQuery.data && chatsQuery.data.pagination.totalPages > 1 && (
-                <div className="desk-toolbar flex shrink-0 items-center justify-between gap-2 border-t bg-[color-mix(in_srgb,var(--surface)_80%,transparent)] p-2 text-xs">
+                <div className="flex shrink-0 items-center justify-between gap-2 border-t p-2 text-xs">
                   <ChatIconButton
                     disabled={!chatsQuery.data.pagination.hasPreviousPage}
                     onClick={() => setPage((current) => Math.max(1, current - 1))}
@@ -496,13 +424,8 @@ export function StaffSupportView() {
               )}
             >
               {!selected ? (
-                <div className="desk-grid-glow grid flex-1 place-items-center bg-[color-mix(in_srgb,var(--surface)_86%,var(--background))] p-8 text-center text-sm text-[var(--muted)]">
-                  <div>
-                    <span className="mx-auto grid size-12 place-items-center rounded-2xl border bg-[var(--surface)] text-[var(--primary)] shadow-sm">
-                      <MessagesSquare className="size-5" />
-                    </span>
-                    <p className="mt-4">{t.noSelection}</p>
-                  </div>
+                <div className="grid flex-1 place-items-center text-sm text-[var(--muted)]">
+                  {t.noSelection}
                 </div>
               ) : (
                 <>
@@ -551,7 +474,7 @@ export function StaffSupportView() {
                   <div className="chat-message-stream relative isolate min-h-0 flex-1 overflow-hidden">
                     <div
                       ref={messagesRef}
-                      className="absolute inset-0 overflow-y-auto overscroll-contain px-3 pb-5 sm:px-6 lg:px-8"
+                      className="absolute inset-0 overflow-y-auto px-4 pb-4"
                     >
                       <DateGroupedMessageList
                         items={selected.messages}
@@ -680,12 +603,12 @@ export function StaffSupportView() {
                         aria-label={t.reply}
                         dir="auto"
                         rows={1}
-                        className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-base leading-6 outline-none placeholder:text-[var(--muted)] disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+                        className="min-h-11 max-h-32 min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-base leading-6 outline-none placeholder:text-[var(--muted)] disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
                       />
                       <Button
                         variant="secondary"
                         size="icon"
-                        className="size-11 shrink-0 rounded-xl"
+                        className="size-11 shrink-0 rounded-full"
                         disabled={!canReply || !message.trim()}
                         loading={rewriteMutation.isPending}
                         onClick={() => {
@@ -701,7 +624,7 @@ export function StaffSupportView() {
                       </Button>
                       <Button
                         size="icon"
-                        className="size-11 shrink-0 rounded-xl"
+                        className="size-11 shrink-0 rounded-full"
                         disabled={!canReply || !message.trim()}
                         loading={sendMutation.isPending}
                         onClick={send}
@@ -710,135 +633,10 @@ export function StaffSupportView() {
                         <Send className="size-4" />
                       </Button>
                     </div>
-                    {canReply && (
-                      <p className="mt-2 px-1 text-[0.625rem] font-medium text-[var(--muted)]">
-                        {t.composerHint}
-                      </p>
-                    )}
                   </footer>
                 </>
               )}
             </section>
-
-            <aside className="hidden min-h-0 overflow-y-auto border-l bg-[color-mix(in_srgb,var(--surface-muted)_52%,var(--surface))] p-4 2xl:block">
-              {selected && (
-                <div className="space-y-4">
-                  <section>
-                    <div className="flex items-center gap-2 text-[0.6875rem] font-bold tracking-[0.12em] text-[var(--muted)] uppercase">
-                      <UserRound className="size-3.5 text-[var(--primary)]" />
-                      {chatUser ? t.userDetails : t.guestDetails}
-                    </div>
-                    <Card className="desk-panel-soft mt-3 rounded-2xl bg-[var(--surface)] p-4 shadow-none">
-                      <div className="flex items-center gap-3">
-                        <UserAvatar
-                          user={
-                            chatUser ?? {
-                              firstName: selected.guest?.label ?? t.guest,
-                              lastName: "",
-                              profileImage: null,
-                            }
-                          }
-                        />
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">
-                            {chatUser
-                              ? userFullName(chatUser)
-                              : (selected.guest?.label ?? t.guest)}
-                          </p>
-                          <p className="mt-0.5 truncate text-[0.6875rem] text-[var(--muted)]">
-                            {chatUser?.email ?? selected.guest?.email ?? "—"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <UserTypeBadge type={selectedUserType}>
-                          {t.historyRole[selectedUserType]}
-                        </UserTypeBadge>
-                        {chatUser?.ban?.isBanned && (
-                          <span className="inline-flex min-h-6 items-center rounded-full border border-rose-300 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:border-rose-400/25 dark:bg-rose-500/15 dark:text-rose-300">
-                            {t.banned}
-                          </span>
-                        )}
-                      </div>
-                      {chatUser && (
-                        <div className="mt-3 grid gap-2">
-                          <Link
-                            href={`/admin/users/${chatUser.id}`}
-                            className="focus-ring flex min-h-10 items-center justify-between rounded-xl border bg-[var(--surface-muted)] px-3 text-xs font-semibold transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]"
-                          >
-                            {t.profile}
-                            <ArrowUpRight className="size-3.5" />
-                          </Link>
-                          <Link
-                            href={`/admin/tickets?ownerId=${chatUser.id}`}
-                            className="focus-ring flex min-h-10 items-center justify-between rounded-xl border bg-[var(--surface-muted)] px-3 text-xs font-semibold transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]"
-                          >
-                            {t.tasks}
-                            <ArrowUpRight className="size-3.5" />
-                          </Link>
-                        </div>
-                      )}
-                    </Card>
-                  </section>
-
-                  <section>
-                    <div className="flex items-center gap-2 text-[0.6875rem] font-bold tracking-[0.12em] text-[var(--muted)] uppercase">
-                      <MessagesSquare className="size-3.5 text-[var(--primary)]" />
-                      {t.conversationContext}
-                    </div>
-                    <Card className="desk-panel-soft mt-3 divide-y rounded-2xl bg-[var(--surface)] px-4 shadow-none">
-                      {[
-                        {
-                          label: t.assignedTo,
-                          value: selected.assignedToName ?? t.unassigned,
-                          icon: ShieldCheck,
-                        },
-                        {
-                          label: t.opened,
-                          value: new Intl.DateTimeFormat(intlLocale, {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          }).format(new Date(selected.createdAt)),
-                          icon: CalendarClock,
-                        },
-                        {
-                          label: t.latestActivity,
-                          value: new Intl.DateTimeFormat(intlLocale, {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          }).format(new Date(selected.updatedAt)),
-                          icon: Clock3,
-                        },
-                      ].map(({ label, value, icon: Icon }) => (
-                        <div key={label} className="flex gap-3 py-3">
-                          <Icon className="mt-0.5 size-3.5 shrink-0 text-[var(--primary)]" />
-                          <div className="min-w-0">
-                            <p className="text-[0.625rem] font-semibold text-[var(--muted)]">
-                              {label}
-                            </p>
-                            <p className="mt-1 break-words text-xs font-semibold">
-                              {value}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </Card>
-                  </section>
-
-                  {(chatUser?.email ?? selected.guest?.email) && (
-                    <a
-                      href={`mailto:${chatUser?.email ?? selected.guest?.email}`}
-                      className="focus-ring flex min-h-11 items-center gap-2 rounded-xl border bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]"
-                    >
-                      <Mail className="size-4" />
-                      <span className="min-w-0 flex-1 truncate">
-                        {chatUser?.email ?? selected.guest?.email}
-                      </span>
-                    </a>
-                  )}
-                </div>
-              )}
-            </aside>
           </div>
         )}
       </div>

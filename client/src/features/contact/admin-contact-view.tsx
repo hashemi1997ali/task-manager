@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormStatusBadge } from "@/components/ui/domain-badge";
 import { UserAvatar } from "@/components/user-avatar";
+import { PageHeading } from "@/components/ui/page-heading";
 import { ErrorState, LoadingState } from "@/components/ui/states";
 import { ChatMessageBubble } from "@/features/chat/chat-message-bubble";
 import { ChatHistoryItem } from "@/features/chat/chat-history-item";
@@ -182,49 +183,39 @@ export function AdminContactView() {
       <PageHeading title={t.title} description={t.description} />
 
       {contactsQuery.isPending ? (
-        <div className="desk-panel grid flex-1 place-items-center">
+        <div className="mt-8">
           <LoadingState label={t.loading} />
         </div>
       ) : contactsQuery.isError ? (
-        <div className="desk-panel grid flex-1 place-items-center p-5">
+        <div className="mt-8">
           <ErrorState
             message={getErrorMessage(contactsQuery.error, locale)}
             retry={() => void contactsQuery.refetch()}
           />
         </div>
       ) : contacts.length === 0 ? (
-        <Card className="desk-panel grid min-h-64 flex-1 place-items-center p-8 text-center text-sm text-[var(--muted)]">
-          <div>
-            <span className="desk-icon-well mx-auto mb-4 text-[var(--primary)]">
-              <Mail className="size-5" />
-            </span>
-            {t.empty}
-          </div>
+        <Card className="mt-8 grid min-h-52 place-items-center p-8 text-center text-sm text-[var(--muted)]">
+          <Mail className="mb-3 size-8 text-[var(--primary)]" />
+          {t.empty}
         </Card>
       ) : (
         <div
           className={cn(
             "mt-5 grid min-h-[38rem] overflow-hidden rounded-[var(--container-radius)] border bg-[var(--surface)] md:min-h-0 md:flex-1 xl:grid-cols-[18rem_minmax(0,1fr)]",
             threadOpen &&
-              "max-md:fixed max-md:inset-0 max-md:z-50 max-md:h-dvh max-md:min-h-0 max-md:rounded-none max-md:border-0",
+              "max-md:fixed max-md:inset-0 max-md:z-50 max-md:mt-0 max-md:h-dvh max-md:min-h-0 max-md:rounded-none max-md:border-0",
           )}
         >
           <aside
             className={cn(
-              "min-h-0 min-w-0 flex-col border-e border-[var(--border)] bg-[var(--surface-muted)]/25",
+              "min-h-0 min-w-0 flex-col border-r",
               threadOpen ? "max-xl:hidden xl:flex" : "flex",
             )}
           >
-            <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border)] px-4">
-              <div>
-                <p className="desk-eyebrow">{t.eyebrow}</p>
-                <h2 className="desk-section-title mt-1">{t.history}</h2>
-              </div>
-              <span className="desk-stat px-2.5 py-1.5 text-xs font-black">
-                {contacts.length}
-              </span>
+            <div className="flex h-16 shrink-0 items-center border-b px-4">
+              <h2 className="text-sm font-semibold">{t.history}</h2>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               {contacts.map((contact) => (
                 <ChatHistoryItem
                   key={contact.id}
@@ -237,7 +228,6 @@ export function AdminContactView() {
                       {contact.status === "open" ? t.open : t.answered}
                     </FormStatusBadge>
                   }
-                  className="mb-1 rounded-xl border border-transparent last:mb-0"
                   onClick={() => {
                     setSelectedId(contact.id);
                     setSuggestions([]);
@@ -250,10 +240,7 @@ export function AdminContactView() {
               ))}
             </div>
             {contactsQuery.data && contactsQuery.data.pagination.totalPages > 1 && (
-              <div
-                className="desk-toolbar m-2 flex shrink-0 items-center justify-between gap-2 p-2 text-xs"
-                style={{ alignItems: "center", flexDirection: "row" }}
-              >
+              <div className="flex shrink-0 items-center justify-between gap-2 border-t p-2 text-xs">
                 <ChatIconButton
                   disabled={!contactsQuery.data.pagination.hasPreviousPage}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
@@ -280,18 +267,13 @@ export function AdminContactView() {
 
           <section
             className={cn(
-              "relative min-h-0 min-w-0 flex-col bg-[var(--surface)]",
+              "relative min-h-0 min-w-0 flex-col",
               threadOpen ? "flex" : "max-xl:hidden xl:flex",
             )}
           >
             {!selected ? (
-              <div className="grid flex-1 place-items-center p-8 text-center text-sm text-[var(--muted)]">
-                <div>
-                  <span className="desk-icon-well mx-auto mb-4 text-[var(--primary)]">
-                    <Mail className="size-5" />
-                  </span>
-                  {t.noSelection}
-                </div>
+              <div className="grid flex-1 place-items-center text-sm text-[var(--muted)]">
+                {t.noSelection}
               </div>
             ) : (
               <>
@@ -321,7 +303,7 @@ export function AdminContactView() {
                 <div className="relative isolate min-h-0 flex-1 overflow-hidden">
                   <div
                     ref={messagesRef}
-                    className="absolute inset-0 overflow-y-auto bg-[var(--surface-muted)]/20 px-4 pb-4"
+                    className="absolute inset-0 overflow-y-auto px-4 pb-4"
                   >
                     <DateGroupedMessageList
                       items={selected.messages}
@@ -358,7 +340,7 @@ export function AdminContactView() {
                     }}
                   />
                 </div>
-                <footer className="shrink-0 border-t border-[var(--border)] bg-[var(--surface)] p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <footer className="shrink-0 border-t bg-[var(--surface)] p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                   <div className="mb-2 flex flex-wrap gap-2">
                     <Button
                       variant="secondary"
@@ -377,7 +359,7 @@ export function AdminContactView() {
                       {suggestions.length > 0 ? t.hideSuggestions : t.suggestions}
                     </Button>
                   </div>
-                  <div className="desk-panel-soft flex items-end gap-2 p-2 focus-within:border-[var(--primary)] focus-within:shadow-[0_0_0_3px_var(--primary-soft)]">
+                  <div className="flex items-end gap-2 rounded-[var(--control-radius)] border bg-[var(--background)] p-2 focus-within:border-[var(--primary)]">
                     <textarea
                       value={reply}
                       onChange={(event) => setReply(event.target.value)}

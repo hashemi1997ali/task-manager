@@ -30,7 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
     return (
       <input
         ref={ref}
-        className={cn(fieldClass, "h-12", field?.invalid && invalidFieldClass, className)}
+        className={cn(fieldClass, "h-11", field?.invalid && invalidFieldClass, className)}
         {...props}
         id={props.id ?? field?.controlId}
         aria-describedby={props["aria-describedby"] ?? field?.descriptionId}
@@ -70,7 +70,7 @@ export const Select = forwardRef<
   return (
     <select
       ref={ref}
-      className={cn(fieldClass, "h-12", field?.invalid && invalidFieldClass, className)}
+      className={cn(fieldClass, "h-11", field?.invalid && invalidFieldClass, className)}
       {...props}
       id={props.id ?? field?.controlId}
       aria-describedby={props["aria-describedby"] ?? field?.descriptionId}

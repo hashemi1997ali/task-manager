@@ -39,37 +39,33 @@ export function ChatThreadHeader({
       {titleHref ? (
         <Link
           href={titleHref}
-          className="focus-ring flex min-h-11 min-w-0 flex-1 flex-col justify-center rounded-[var(--control-radius)] px-1.5 hover:text-[var(--primary)]"
+          className="focus-ring flex min-h-11 min-w-0 flex-1 flex-col justify-center rounded-[var(--control-radius)] px-1 hover:text-[var(--primary)]"
         >
-          <h2 className="truncate text-sm font-semibold tracking-[-0.01em]" dir="auto">
+          <h2 className="truncate text-sm font-semibold" dir="auto">
             {title}
           </h2>
           {subtitle && (
-            <p
-              className="mt-0.5 truncate text-[0.6875rem] font-medium text-[var(--muted)]"
-              dir="auto"
-            >
+            <p className="mt-0.5 truncate text-xs text-[var(--muted)]" dir="auto">
               {subtitle}
             </p>
           )}
         </Link>
       ) : (
-        <div className="flex min-h-11 min-w-0 flex-1 flex-col justify-center px-1.5">
-          <h2 className="truncate text-sm font-semibold tracking-[-0.01em]" dir="auto">
+        <div className="flex min-h-11 min-w-0 flex-1 flex-col justify-center px-1">
+          <h2 className="truncate text-sm font-semibold" dir="auto">
             {title}
           </h2>
           {subtitle && (
-            <p
-              className="mt-0.5 truncate text-[0.6875rem] font-medium text-[var(--muted)]"
-              dir="auto"
-            >
+            <p className="mt-0.5 truncate text-xs text-[var(--muted)]" dir="auto">
               {subtitle}
             </p>
           )}
         </div>
       )}
       {meta && (
-        <div className="ml-auto hidden shrink-0 items-center gap-1.5 md:flex">{meta}</div>
+        <div className="ml-auto max-md:hidden shrink-0 items-center gap-1 md:flex xl:hidden">
+          {meta}
+        </div>
       )}
     </header>
   );

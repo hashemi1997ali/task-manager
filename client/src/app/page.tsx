@@ -18,7 +18,6 @@ import {
   WandSparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
 
 import FadeContent from "@/components/FadeContent";
 import { Logo } from "@/components/logo";
@@ -417,119 +416,6 @@ export default function HomePage() {
               </div>
             </div>
           </FadeContent>
-        </section>
-
-        <section id="features" className="nova-section">
-          <div className="nova-section-heading">
-            <div>
-              <p className="desk-eyebrow">{t.featuresEyebrow}</p>
-              <h2>{t.featuresTitle}</h2>
-            </div>
-            <p>{t.featuresDescription}</p>
-          </div>
-          <div className="nova-feature-grid">
-            {t.features.map(({ title, description }, index) => {
-              const Icon = featureIcons[index];
-              return (
-                <article key={title} className={"nova-feature-card is-" + (index + 1)}>
-                  <span className="nova-feature-number">0{index + 1}</span>
-                  <span className="nova-feature-icon">
-                    <Icon className="size-5" aria-hidden="true" />
-                  </span>
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                  <div className="nova-feature-line" aria-hidden="true" />
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="nova-time-band">
-          <div className="nova-time-copy">
-            <p className="desk-eyebrow">{t.timeEyebrow}</p>
-            <h2>{t.timeTitle}</h2>
-            <p>{t.timeDescription}</p>
-            <div className="nova-time-pulse">
-              <Clock3 className="size-4" aria-hidden="true" />
-              <span>10:36</span>
-              <small>{t.preview.nextSla}</small>
-            </div>
-          </div>
-          <ol className="nova-timeline">
-            {t.timeEvents.map((event, index) => (
-              <li key={event.time + event.label}>
-                <time>{event.time}</time>
-                <span className={index === t.timeEvents.length - 1 ? "is-due" : ""} />
-                <div>
-                  <strong>{event.label}</strong>
-                  <p>{event.detail}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section id="workflow" className="nova-section nova-workflow">
-          <div className="nova-workflow-intro">
-            <span className="nova-orbit" aria-hidden="true">
-              <Sparkles className="size-5" />
-            </span>
-            <p className="desk-eyebrow">{t.workflowEyebrow}</p>
-            <h2>{t.workflowTitle}</h2>
-            <p>{t.workflowDescription}</p>
-          </div>
-          <ol className="nova-workflow-list">
-            {t.steps.map((step) => (
-              <li key={step.number}>
-                <span>{step.number}</span>
-                <div>
-                  <h3>{step.title}</h3>
-                  <p>{step.description}</p>
-                </div>
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section id="security" className="nova-security">
-          <div className="nova-security-copy">
-            <span>
-              <LockKeyhole className="size-5" aria-hidden="true" />
-            </span>
-            <div>
-              <h2>{t.securityTitle}</h2>
-              <p>{t.securityDescription}</p>
-            </div>
-          </div>
-          <div className="nova-security-list">
-            {t.securityItems.map((item) => (
-              <div key={item}>
-                <ShieldCheck className="size-4" aria-hidden="true" />
-                <span>{item}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="nova-cta">
-          <div className="nova-cta-aura" aria-hidden="true" />
-          <div>
-            <p className="desk-eyebrow">{t.ctaEyebrow}</p>
-            <h2>{t.ctaTitle}</h2>
-            <p>{t.ctaDescription}</p>
-          </div>
-          <Link
-            href="/register"
-            className={buttonClassName({
-              size: "lg",
-              className: "nova-cta-action",
-            })}
-          >
-            {t.start}
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
         </section>
       </main>
 

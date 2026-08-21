@@ -15,7 +15,6 @@ import {
   Plus,
   Settings,
   ShieldCheck,
-  TicketCheck,
   UserRound,
   UsersRound,
   X,
@@ -37,9 +36,9 @@ import { usePreferences } from "@/providers/preferences-provider";
 
 const copy = {
   en: {
-    today: "Overview",
-    tasks: "My requests",
-    assistant: "AI triage",
+    today: "Today",
+    tasks: "Tasks",
+    assistant: "AI Assistant",
     account: "Account",
     general: "General",
     profile: "Account",
@@ -61,7 +60,7 @@ const copy = {
     contactUs: "Contact us",
     administration: "Administration",
     navigation: "Workspace navigation",
-    newTask: "New request",
+    newTask: "New task",
     more: "More",
     moreDescription: "Account and administration options.",
     close: "Close menu",
@@ -73,9 +72,9 @@ const copy = {
     expandSidebar: "Expand sidebar",
   },
   de: {
-    today: "Übersicht",
-    tasks: "Meine Anfragen",
-    assistant: "KI-Triage",
+    today: "Heute",
+    tasks: "Aufgaben",
+    assistant: "KI-Assistent",
     account: "Konto",
     general: "Allgemein",
     profile: "Konto",
@@ -97,7 +96,7 @@ const copy = {
     contactUs: "Kontaktiere uns",
     administration: "Administration",
     navigation: "Arbeitsbereich-Navigation",
-    newTask: "Neue Anfrage",
+    newTask: "Neue Aufgabe",
     more: "Mehr",
     moreDescription: "Konto- und Administrationsoptionen.",
     close: "Menü schließen",
@@ -155,22 +154,10 @@ export function AppShell({
   );
   const [tabletSidebarOpening, setTabletSidebarOpening] = useState(false);
   const [desktopSidebarOpening, setDesktopSidebarOpening] = useState(false);
-  const [localNow, setLocalNow] = useState<Date | null>(null);
-
-  useEffect(() => {
-    const updateClock = () => setLocalNow(new Date());
-    updateClock();
-    const interval = window.setInterval(updateClock, 30_000);
-    document.addEventListener("visibilitychange", updateClock);
-    return () => {
-      window.clearInterval(interval);
-      document.removeEventListener("visibilitychange", updateClock);
-    };
-  }, []);
   const workspaceLinks = useMemo<NavItem[]>(
     () => [
       { href: "/dashboard", label: t.today, icon: LayoutDashboard },
-      { href: "/tickets", label: t.tasks, icon: TicketCheck },
+      { href: "/tasks", label: t.tasks, icon: CheckSquare2 },
       { href: "/assistant", label: t.assistant, icon: Bot },
     ],
     [t],
@@ -201,7 +188,7 @@ export function AppShell({
   const adminLinks = useMemo<NavItem[]>(
     () => [
       { href: "/admin", label: t.overview, icon: ShieldCheck },
-      { href: "/admin/tickets", label: t.allTasks, icon: TicketCheck },
+      { href: "/admin/tasks", label: t.allTasks, icon: CheckSquare2 },
       { href: "/admin/users", label: t.users, icon: UsersRound },
       { href: "/admin/support", label: t.supportChat, icon: Headphones },
       { href: "/admin/contact", label: t.contactForm, icon: Mail },

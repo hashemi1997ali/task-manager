@@ -1,40 +1,29 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  ArrowUpRight,
+  Bot,
   CalendarCheck2,
-  CalendarClock,
   CheckCircle2,
-  ClipboardList,
+  Circle,
   Clock3,
-  Hourglass,
-  MessageSquareReply,
+  ListTodo,
   Sparkles,
-  TicketCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { buttonClassName } from "@/components/ui/button";
-import {
-  TaskPriorityBadge,
-  TaskStatusBadge,
-  TicketCategoryBadge,
-} from "@/components/ui/domain-badge";
+import { Card } from "@/components/ui/card";
+import { TaskPriorityBadge, TaskStatusBadge } from "@/components/ui/domain-badge";
 import { ErrorState, LoadingState } from "@/components/ui/states";
 import { TrendChart } from "@/components/ui/trend-chart";
 import { useAuth } from "@/features/auth/auth-provider";
-import { SlaCountdown } from "@/features/tasks/sla-countdown";
-import { getTodayDashboardRequest } from "@/features/tasks/api";
+import { getTodayDashboardRequest, updateTaskRequest } from "@/features/tasks/api";
 import { getErrorMessage } from "@/lib/api-error";
-import {
-  getTaskPriorityLabel,
-  getTaskStatusLabel,
-  getTicketCategoryLabel,
-} from "@/lib/domain-labels";
-import type { TodayDashboard } from "@/lib/types";
-import { cn, formatDateTime, formatNumber, getId } from "@/lib/utils";
+import type { Task, TodayDashboard } from "@/lib/types";
+import { cn, formatNumber, formatPercent, getId } from "@/lib/utils";
 import { usePreferences } from "@/providers/preferences-provider";
 
 const copy = {
@@ -44,34 +33,31 @@ const copy = {
       afternoon: "Good afternoon",
       evening: "Good evening",
     },
-    intro: "Here is the latest on your support requests.",
-    openTickets: "Open requests",
-    waitingCustomer: "Waiting for you",
-    slaBreached: "SLA at risk",
-    resolvedToday: "Resolved today",
-    timeline: "Today's SLA timeline",
-    timelineDescription: "Deadlines in your local support day",
-    noTimeline: "No response, resolution, or requested deadlines today.",
-    responseDeadline: "Response",
-    resolutionDeadline: "Resolution",
-    requestedDeadline: "Requested",
-    now: "Current hour",
-    attention: "Needs attention",
-    upcoming: "Upcoming requested dates",
-    aiBrief: "Request summary",
-    aiAction: "Review my requests",
-    askAi: "Ask AI about a request",
-    weekly: "Resolved this week",
+    intro: "Here’s what needs your attention today.",
+    tasksToday: "Tasks today",
+    completed: "Completed",
+    overdue: "Overdue",
+    completionRate: "Completion rate",
+    focus: "Today focus",
+    upcoming: "Upcoming",
+    aiBrief: "AI Daily Brief",
+    aiAction: "Fix my schedule",
+    askAi: "Ask AI about my day",
+    weekly: "Weekly progress",
     lastSevenDays: "Last 7 days",
-    noTickets: "No open requests need your attention.",
-    dueToday: "Requested today",
-    overdueLabel: "Past requested date",
-    noUpcoming: "No requests",
-    scheduledTickets: (count: number) =>
-      `${count} request${count === 1 ? "" : "s"} requested`,
-    resolvedTickets: (count: number) =>
-      `${count} ticket${count === 1 ? "" : "s"} resolved`,
-    requestedFor: "Requested resolution",
+    noTasks: "No active tasks need your attention.",
+    today: "Today",
+    overdueLabel: "Overdue",
+    noUpcoming: "No tasks",
+    scheduledTasks: (count: number) => `${count} task${count === 1 ? "" : "s"} scheduled`,
+    completedTasks: (count: number) => `${count} task${count === 1 ? "" : "s"} completed`,
+    priority: { low: "Low", medium: "Medium", high: "High", urgent: "Urgent" },
+    status: {
+      todo: "To do",
+      "in-progress": "In progress",
+      "waiting-customer": "Waiting on customer",
+      done: "Done",
+    },
     brief: ({
       overdue,
       highPriority,
@@ -79,20 +65,20 @@ const copy = {
       scheduleConflicts,
     }: TodayDashboard["dailyBrief"]) => {
       const details = [
-        overdue > 0 ? `${overdue} past-due request${overdue === 1 ? "" : "s"}` : null,
+        overdue > 0 ? `${overdue} overdue task${overdue === 1 ? "" : "s"}` : null,
         dueToday > 0
-          ? `${dueToday} request${dueToday === 1 ? "" : "s"} requested for today`
+          ? `${dueToday} task${dueToday === 1 ? "" : "s"} still due today`
           : null,
         highPriority > 0
-          ? `${highPriority} high-priority ticket${highPriority === 1 ? "" : "s"}`
+          ? `${highPriority} high-priority item${highPriority === 1 ? "" : "s"}`
           : null,
         scheduleConflicts > 0
-          ? `${scheduleConflicts} overlapping requested deadline${scheduleConflicts === 1 ? "" : "s"}`
+          ? `${scheduleConflicts} potential scheduling conflict${scheduleConflicts === 1 ? "" : "s"}`
           : null,
       ].filter(Boolean);
       return details.length
         ? `Karino found ${details.join(", ")}.`
-        : "Your request queue is clear. You can ask the assistant for help or submit a new request.";
+        : "Your schedule looks clear. Choose one meaningful task to move forward.";
     },
   },
   de: {
@@ -101,33 +87,38 @@ const copy = {
       afternoon: "Guten Tag",
       evening: "Guten Abend",
     },
-    intro: "Hier ist der aktuelle Stand deiner Support-Anfragen.",
-    openTickets: "Offene Anfragen",
-    waitingCustomer: "Wartet auf dich",
-    slaBreached: "SLA gefährdet",
-    resolvedToday: "Heute gelöst",
-    timeline: "Heutige SLA-Zeitleiste",
-    timelineDescription: "Fristen in deinem lokalen Support-Tag",
-    noTimeline: "Heute gibt es keine Reaktions-, Lösungs- oder Wunschtermine.",
-    responseDeadline: "Reaktion",
-    resolutionDeadline: "Lösung",
-    requestedDeadline: "Gewünscht",
-    now: "Aktuelle Stunde",
-    attention: "Benötigt Aufmerksamkeit",
-    upcoming: "Kommende Wunschtermine",
-    aiBrief: "Anfragenübersicht",
-    aiAction: "Meine Anfragen prüfen",
-    askAi: "KI zu einer Anfrage fragen",
-    weekly: "Diese Woche gelöst",
+    intro: "Das benötigt heute deine Aufmerksamkeit.",
+    tasksToday: "Aufgaben heute",
+    completed: "Erledigt",
+    overdue: "Überfällig",
+    completionRate: "Erledigungsquote",
+    focus: "Fokus für heute",
+    upcoming: "Demnächst",
+    aiBrief: "KI-Tagesübersicht",
+    aiAction: "Zeitplan optimieren",
+    askAi: "KI zu meinem Tag fragen",
+    weekly: "Wochenfortschritt",
     lastSevenDays: "Letzte 7 Tage",
-    noTickets: "Keine offenen Anfragen benötigen deine Aufmerksamkeit.",
-    dueToday: "Für heute gewünscht",
-    overdueLabel: "Gewünschter Termin vorbei",
-    noUpcoming: "Keine Anfragen",
-    scheduledTickets: (count: number) =>
-      `${count} Anfrage${count === 1 ? "" : "n"} gewünscht`,
-    resolvedTickets: (count: number) => `${count} Ticket${count === 1 ? "" : "s"} gelöst`,
-    requestedFor: "Gewünschte Lösung",
+    noTasks: "Keine aktiven Aufgaben benötigen deine Aufmerksamkeit.",
+    today: "Heute",
+    overdueLabel: "Überfällig",
+    noUpcoming: "Keine Aufgaben",
+    scheduledTasks: (count: number) =>
+      `${count} Aufgabe${count === 1 ? "" : "n"} geplant`,
+    completedTasks: (count: number) =>
+      `${count} Aufgabe${count === 1 ? "" : "n"} erledigt`,
+    priority: {
+      low: "Niedrig",
+      medium: "Mittel",
+      high: "Hoch",
+      urgent: "Dringend",
+    },
+    status: {
+      todo: "Offen",
+      "in-progress": "In Bearbeitung",
+      "waiting-customer": "Wartet auf Kunden",
+      done: "Erledigt",
+    },
     brief: ({
       overdue,
       highPriority,
@@ -135,20 +126,20 @@ const copy = {
       scheduleConflicts,
     }: TodayDashboard["dailyBrief"]) => {
       const details = [
-        overdue > 0 ? `${overdue} überfällige Anfrage${overdue === 1 ? "" : "n"}` : null,
+        overdue > 0 ? `${overdue} überfällige Aufgabe${overdue === 1 ? "" : "n"}` : null,
         dueToday > 0
-          ? `${dueToday} für heute gewünschte Anfrage${dueToday === 1 ? "" : "n"}`
+          ? `${dueToday} heute noch fällige Aufgabe${dueToday === 1 ? "" : "n"}`
           : null,
         highPriority > 0
-          ? `${highPriority} Ticket${highPriority === 1 ? "" : "s"} mit hoher Priorität`
+          ? `${highPriority} Eintrag${highPriority === 1 ? "" : "e"} mit hoher Priorität`
           : null,
         scheduleConflicts > 0
-          ? `${scheduleConflicts} überschneidende Wunschtermin${scheduleConflicts === 1 ? "" : "e"}`
+          ? `${scheduleConflicts} mögliche${scheduleConflicts === 1 ? "r" : ""} Terminkonflikt${scheduleConflicts === 1 ? "" : "e"}`
           : null,
       ].filter(Boolean);
       return details.length
         ? `Karino hat ${details.join(", ")} gefunden.`
-        : "Deine Anfragenübersicht ist frei. Frage den Assistenten oder sende eine neue Anfrage.";
+        : "Dein Zeitplan ist übersichtlich. Wähle eine wichtige Aufgabe als nächsten Schritt.";
     },
   },
 } as const;
@@ -164,10 +155,23 @@ export function DashboardView() {
   const { user } = useAuth();
   const { locale, intlLocale } = usePreferences();
   const t = copy[locale];
+  const queryClient = useQueryClient();
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", "today"],
     queryFn: getTodayDashboardRequest,
-    refetchInterval: 30_000,
+  });
+  const statusMutation = useMutation({
+    mutationFn: (task: Task) =>
+      updateTaskRequest(getId(task), {
+        status: task.status === "done" ? "todo" : "done",
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+      ]);
+    },
+    onError: (error) => toast.error(getErrorMessage(error, locale)),
   });
 
   if (dashboardQuery.isPending) return <LoadingState />;
@@ -183,43 +187,39 @@ export function DashboardView() {
   const dashboard = dashboardQuery.data;
   const stats = [
     {
-      label: t.openTickets,
-      value: formatNumber(dashboard.stats.openTickets, intlLocale),
-      icon: TicketCheck,
+      label: t.tasksToday,
+      value: formatNumber(dashboard.stats.tasksToday, intlLocale),
+      icon: ListTodo,
     },
     {
-      label: t.waitingCustomer,
-      value: formatNumber(dashboard.stats.waitingCustomer, intlLocale),
-      icon: Hourglass,
+      label: t.completed,
+      value: formatNumber(dashboard.stats.completed, intlLocale),
+      icon: CheckCircle2,
     },
     {
-      label: t.slaBreached,
-      value: formatNumber(dashboard.stats.slaAtRisk, intlLocale),
+      label: t.overdue,
+      value: formatNumber(dashboard.stats.overdue, intlLocale),
       icon: AlertTriangle,
     },
     {
-      label: t.resolvedToday,
-      value: formatNumber(dashboard.stats.resolvedToday, intlLocale),
-      icon: CheckCircle2,
+      label: t.completionRate,
+      value: formatPercent(dashboard.stats.completionRate, intlLocale),
+      icon: Clock3,
     },
   ];
-  const dashboardNow = Date.parse(dashboard.generatedAt);
-  const currentHour = Number(
-    new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      hourCycle: "h23",
+  const todayKey = new Intl.DateTimeFormat("en-CA", {
+    timeZone: dashboard.timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(dashboard.generatedAt));
+  const dateKeyFor = (date: string) =>
+    new Intl.DateTimeFormat("en-CA", {
       timeZone: dashboard.timeZone,
-    })
-      .formatToParts(new Date(dashboard.generatedAt))
-      .find((part) => part.type === "hour")?.value ?? 0,
-  );
-  const scheduledHours = dashboard.hourlySchedule.filter(
-    (item) =>
-      item.requestedDeadlines > 0 ||
-      item.firstResponseDeadlines > 0 ||
-      item.resolutionDeadlines > 0,
-  );
-  const attentionTickets = dashboard.needsAttention ?? dashboard.focusTasks;
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(date));
 
   return (
     <div className="desk-reveal space-y-5">
@@ -251,15 +251,9 @@ export function DashboardView() {
             <span className="desk-icon-well">
               <Icon className="size-4" aria-hidden="true" />
             </span>
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold tracking-[0.08em] text-[var(--muted)] uppercase">
-                {label}
-              </p>
-              <p className="mt-1 text-2xl font-black tracking-[-0.04em] tabular-nums sm:text-3xl">
-                {value}
-              </p>
-            </div>
-          </article>
+            <p className="mt-3 text-xs font-semibold text-[var(--muted)]">{label}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
+          </Card>
         ))}
       </section>
 
@@ -298,34 +292,22 @@ export function DashboardView() {
                         <h3 className="truncate text-sm font-semibold">{task.title}</h3>
                         <p
                           className={cn(
-                            "flex items-center gap-1.5 text-[var(--muted)]",
-                            requestedOverdue && "font-bold text-[var(--danger)]",
+                            "mt-1 text-xs text-[var(--muted)]",
+                            taskDateKey < todayKey &&
+                              task.status !== "done" &&
+                              "text-[var(--danger)]",
                           )}
                         >
-                          <CalendarClock className="size-3.5" aria-hidden="true" />
-                          {ticket.dueDate ? (
-                            <time dateTime={ticket.dueDate}>
-                              {t.requestedFor}:{" "}
-                              {formatDateTime(ticket.dueDate, intlLocale)}
-                            </time>
-                          ) : (
-                            <span>—</span>
-                          )}
-                          {requestedOverdue && <span>· {t.overdueLabel}</span>}
+                          {taskDateKey < todayKey && task.status !== "done"
+                            ? t.overdueLabel
+                            : t.today}
                         </p>
-                        <SlaCountdown
-                          ticket={ticket}
-                          compact
-                          referenceTime={dashboardNow}
-                        />
                       </div>
-                    </div>
-                    <div className="flex items-start gap-2 sm:justify-end">
-                      <TaskPriorityBadge priority={ticket.priority}>
-                        {getTaskPriorityLabel(ticket.priority, locale)}
+                      <TaskPriorityBadge priority={task.priority}>
+                        {t.priority[task.priority]}
                       </TaskPriorityBadge>
-                      <TaskStatusBadge status={ticket.status}>
-                        {getTaskStatusLabel(ticket.status, locale)}
+                      <TaskStatusBadge status={task.status}>
+                        {t.status[task.status]}
                       </TaskStatusBadge>
                     </Card>
                   );
@@ -379,9 +361,9 @@ export function DashboardView() {
                   </div>
                 );
               })}
-            </div>
-          )}
-        </section>
+            </Card>
+          </section>
+        </div>
 
         <aside className="space-y-5">
           <Card className="desk-panel-soft relative overflow-hidden p-5 sm:p-6">
@@ -392,84 +374,41 @@ export function DashboardView() {
               </span>
               <h2 className="text-sm font-semibold">{t.aiBrief}</h2>
             </div>
-            <p className="relative mt-5 text-sm leading-6 text-[var(--muted)]">
+            <p className="mt-4 min-h-12 text-sm leading-6 text-[var(--muted)]">
               {t.brief(dashboard.dailyBrief)}
             </p>
             <Link
               href="/assistant"
-              className={buttonClassName({ className: "relative mt-5 flex w-full" })}
+              className={buttonClassName({ className: "mt-5 flex w-full" })}
             >
               <Sparkles className="size-4" />
               {t.aiAction}
             </Link>
-          </section>
+          </Card>
 
           <Card className="desk-panel p-5">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-semibold">{t.weekly}</h2>
               <span className="text-xs text-[var(--muted)]">{t.lastSevenDays}</span>
             </div>
-            <div className="mt-5">
+            <div className="mt-4">
               <TrendChart
                 data={dashboard.weeklyProgress.map((item) => ({
                   key: item.date,
                   value: item.completed,
-                  accessibleLabel: `${new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${item.date}T12:00:00Z`))}: ${t.resolvedTickets(item.completed)}`,
+                  accessibleLabel: `${new Intl.DateTimeFormat(intlLocale, {
+                    dateStyle: "medium",
+                    timeZone: "UTC",
+                  }).format(new Date(`${item.date}T12:00:00Z`))}: ${t.completedTasks(
+                    item.completed,
+                  )}`,
                 }))}
                 label={t.weekly}
               />
             </div>
-          </section>
+          </Card>
         </aside>
       </div>
-
-      <section className="desk-panel overflow-hidden">
-        <div className="border-b border-[var(--border)]/75 px-4 py-4 sm:px-5">
-          <p className="desk-eyebrow">{t.requestedDeadline}</p>
-          <h2 className="desk-section-title mt-1">{t.upcoming}</h2>
-        </div>
-        <div className="grid grid-cols-5 divide-x divide-[var(--border)]/70 p-2 sm:p-3">
-          {dashboard.upcoming.map((day) => {
-            const date = new Date(`${day.date}T12:00:00Z`);
-            const dateLabel = new Intl.DateTimeFormat(intlLocale, {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-              timeZone: "UTC",
-            }).format(date);
-            return (
-              <div
-                key={day.date}
-                className="flex min-w-0 flex-col items-center rounded-xl px-1 py-3 text-center sm:py-4"
-                aria-label={`${dateLabel}: ${day.count ? t.scheduledTickets(day.count) : t.noUpcoming}`}
-              >
-                <span className="text-[10px] font-bold tracking-wider text-[var(--muted)] uppercase sm:text-xs">
-                  {new Intl.DateTimeFormat(intlLocale, {
-                    weekday: "short",
-                    timeZone: "UTC",
-                  }).format(date)}
-                </span>
-                <span className="mt-2 text-xl font-black tracking-tight tabular-nums sm:text-2xl">
-                  {new Intl.DateTimeFormat(intlLocale, {
-                    day: "numeric",
-                    timeZone: "UTC",
-                  }).format(date)}
-                </span>
-                <span
-                  className={cn(
-                    "mt-2 min-w-6 rounded-full px-1.5 py-0.5 text-[10px] font-black tabular-nums",
-                    day.count
-                      ? "bg-[var(--primary)] text-[var(--on-primary)]"
-                      : "bg-[var(--surface-muted)] text-[var(--muted)]",
-                  )}
-                >
-                  {day.count > 0 ? formatNumber(day.count, intlLocale) : "—"}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 }

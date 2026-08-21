@@ -23,6 +23,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { Card, Badge } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Field, Input } from "@/components/ui/form-controls";
+import { PageHeading } from "@/components/ui/page-heading";
 import { ErrorState, LoadingState } from "@/components/ui/states";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { ThemeSelector } from "@/components/ui/theme-selector";
@@ -151,7 +152,7 @@ const copy = {
     deleteAccount: "Delete account",
     deleteAccountTitle: "Permanently delete your account?",
     deleteAccountDescription:
-      "Your profile, tickets, chats, assistant conversations, sessions, and related account data will be permanently deleted. This cannot be undone.",
+      "Your profile, tasks, chats, assistant conversations, sessions, and related account data will be permanently deleted. This cannot be undone.",
     deleteAccountHelp: "Permanently remove your account and all related data.",
     accountDeleted: "Your account and related data were deleted.",
     saveChanges: "Save changes",
@@ -220,7 +221,7 @@ const copy = {
     deleteAccount: "Konto löschen",
     deleteAccountTitle: "Dein Konto dauerhaft löschen?",
     deleteAccountDescription:
-      "Dein Profil, deine Tickets, Chats, Assistent-Unterhaltungen, Sitzungen und zugehörigen Kontodaten werden dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
+      "Dein Profil, deine Aufgaben, Chats, Assistent-Unterhaltungen, Sitzungen und zugehörigen Kontodaten werden dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
     deleteAccountHelp: "Konto und alle zugehörigen Daten dauerhaft entfernen.",
     accountDeleted: "Dein Konto und die zugehörigen Daten wurden gelöscht.",
     saveChanges: "Änderungen speichern",
@@ -543,14 +544,14 @@ export function AccountView({ embedded = false }: { embedded?: boolean }) {
                 <div className="relative shrink-0">
                   <UserAvatar
                     user={user}
-                    className="size-20 ring-4 ring-[var(--surface)] shadow-xl sm:size-24"
-                    imageSizes="96px"
+                    className="size-14"
+                    imageSizes="56px"
                     imageUrl={
                       removeProfileImage ? null : (profileImagePreview ?? undefined)
                     }
                   />
                   <label
-                    className={`focus-ring absolute -bottom-1 -right-1 grid size-10 cursor-pointer place-items-center rounded-full ${
+                    className={`focus-ring absolute -top-3 -right-3 grid size-11 cursor-pointer place-items-center rounded-full ${
                       profileImage || processingImage
                         ? "text-white"
                         : "text-[var(--foreground)]"
@@ -559,7 +560,7 @@ export function AccountView({ embedded = false }: { embedded?: boolean }) {
                     aria-label={t.chooseImage}
                   >
                     <span
-                      className={`grid size-9 place-items-center rounded-full border-2 border-[var(--surface)] shadow-lg ${
+                      className={`grid size-7 place-items-center rounded-full border shadow-sm ${
                         profileImage || processingImage
                           ? "border-[var(--primary)] bg-[var(--primary)]"
                           : "bg-[var(--surface)]"
@@ -618,85 +619,66 @@ export function AccountView({ embedded = false }: { embedded?: boolean }) {
                   {t.removeImage}
                 </Button>
               )}
-              <div
-                className="pointer-events-none absolute -end-16 -top-20 size-56 rounded-full bg-[var(--primary)]/10 blur-3xl"
-                aria-hidden="true"
-              />
             </div>
-            <div className="grid gap-8 p-5 lg:grid-cols-[minmax(0,1fr)_17rem] lg:p-7">
-              <form
-                onSubmit={submitProfile}
-                className="grid content-start gap-4"
-                noValidate
-              >
-                <div>
-                  <h3 className="desk-section-title">{t.profileDescription}</h3>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field
-                    label={t.firstName}
-                    error={profileForm.formState.errors.firstName?.message}
-                  >
-                    <Input
-                      dir="auto"
-                      autoComplete="given-name"
-                      {...profileForm.register("firstName")}
-                    />
-                  </Field>
-                  <Field
-                    label={t.lastName}
-                    error={profileForm.formState.errors.lastName?.message}
-                  >
-                    <Input
-                      dir="auto"
-                      autoComplete="family-name"
-                      {...profileForm.register("lastName")}
-                    />
-                  </Field>
-                </div>
+            <form onSubmit={submitProfile} className="mt-5 grid gap-3" noValidate>
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Field
-                  label={t.email}
-                  error={profileForm.formState.errors.email?.message}
+                  label={t.firstName}
+                  error={profileForm.formState.errors.firstName?.message}
                 >
                   <Input
-                    type="email"
-                    dir="ltr"
-                    autoComplete="email"
-                    {...profileForm.register("email")}
+                    dir="auto"
+                    autoComplete="given-name"
+                    {...profileForm.register("firstName")}
                   />
                 </Field>
-                <div className="mt-2 flex justify-end">
-                  <Button
-                    type="submit"
-                    loading={profileMutation.isPending}
-                    disabled={processingImage || !profileHasChanges}
-                  >
-                    <Save className="size-4" /> {t.saveChanges}
-                  </Button>
-                </div>
-              </form>
-              <aside className="desk-panel-soft flex flex-col justify-between p-4">
-                <div>
-                  <span className="desk-icon-well text-[var(--danger)]">
-                    <Trash2 className="size-5" />
-                  </span>
-                  <h3 className="mt-4 text-sm font-bold text-[var(--foreground)]">
-                    {t.deleteAccount}
-                  </h3>
-                  <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-                    {t.deleteAccountHelp}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="danger"
-                  className="mt-6 w-full"
-                  onClick={() => setConfirmDeleteAccount(true)}
+                <Field
+                  label={t.lastName}
+                  error={profileForm.formState.errors.lastName?.message}
                 >
-                  <Trash2 className="size-4" />
-                  {t.deleteAccount}
+                  <Input
+                    dir="auto"
+                    autoComplete="family-name"
+                    {...profileForm.register("lastName")}
+                  />
+                </Field>
+              </div>
+              <Field label={t.email} error={profileForm.formState.errors.email?.message}>
+                <Input
+                  type="email"
+                  dir="ltr"
+                  autoComplete="email"
+                  {...profileForm.register("email")}
+                />
+              </Field>
+              <div className="mt-2 flex justify-end">
+                <Button
+                  type="submit"
+                  loading={profileMutation.isPending}
+                  disabled={processingImage || !profileHasChanges}
+                >
+                  <Save className="size-4" /> {t.saveChanges}
                 </Button>
-              </aside>
+              </div>
+            </form>
+            <div className="mt-6 flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-[var(--danger)]">
+                  {t.deleteAccount}
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+                  {t.deleteAccountHelp}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="danger"
+                className="w-full shrink-0 sm:w-auto"
+                onClick={() => setConfirmDeleteAccount(true)}
+              >
+                <Trash2 className="size-4" />
+                {t.deleteAccount}
+              </Button>
             </div>
           </Card>
         )}
