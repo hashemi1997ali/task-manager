@@ -8,7 +8,7 @@ Karino combines personal task planning, a private AI assistant, secure account m
 
 ## 📖 Project Overview
 
-Karino gives users a private, responsive workspace for planning their day and managing tasks in list or board views. Administrators get an operational overview plus tools for users, tasks, support, and contact messages. Built-in assistants provide role-scoped site guidance, private task planning, confirmed task creation, and staff account tools.
+Karino gives users a private, responsive workspace for planning their day and managing tasks through adaptive card layouts on smaller screens and a structured table on wide screens. Administrators get an operational overview plus tools for users, tasks, support, and contact messages. Built-in assistants provide role-scoped site guidance, private task planning, confirmed task creation, and staff account tools.
 
 The repository is an npm workspace containing the web client and API:
 
@@ -28,7 +28,7 @@ karino/
 ### 📋 Task Management
 
 - Create, edit, delete, search, filter, sort, and paginate tasks
-- Switch between responsive list and status-board views
+- Review and update tasks through responsive cards on mobile and tablet, with a structured table on wide screens
 - Track `todo`, `in-progress`, and `done` statuses
 - Assign low, medium, or high priority
 - Set deadlines, identify overdue work, and review recently updated tasks
@@ -214,24 +214,24 @@ npm run start:server
 
 ### Web Application
 
-| Route               | Access        | Description                                 |
-| ------------------- | ------------- | ------------------------------------------- |
-| `/`                 | Public        | Landing page                                |
-| `/login`            | Public        | Sign in                                     |
-| `/register`         | Public        | Create an account                           |
-| `/forgot-password`  | Public        | Request a password-reset link               |
-| `/reset-password`   | Public        | Set a new password                          |
-| `/contact`          | Public        | Contact form and public information         |
-| `/dashboard`        | Authenticated | Today overview, focus work, and progress    |
-| `/tasks`            | Authenticated | Personal task list and board                |
-| `/assistant`        | Authenticated | Private AI task assistant and history       |
-| `/account`          | Authenticated | Profile, appearance, security, and sessions |
-| `/admin`            | Staff         | Administrative overview and metrics         |
-| `/admin/tasks`      | Staff         | Manage all tasks and owners                 |
-| `/admin/users`      | Staff         | Manage users, roles, and bans               |
-| `/admin/users/[id]` | Staff         | Review a user, their tasks, and access      |
-| `/admin/support`    | Staff         | Handle and transfer support conversations   |
-| `/admin/contact`    | Staff         | Review and reply to public contact messages |
+| Route               | Access        | Description                                  |
+| ------------------- | ------------- | -------------------------------------------- |
+| `/`                 | Public        | Landing page                                 |
+| `/login`            | Public        | Sign in                                      |
+| `/register`         | Public        | Create an account                            |
+| `/forgot-password`  | Public        | Request a password-reset link                |
+| `/reset-password`   | Public        | Set a new password                           |
+| `/contact`          | Public        | Contact form and public information          |
+| `/dashboard`        | Authenticated | Today overview, focus work, and progress     |
+| `/tasks`            | Authenticated | Personal task management in card/table views |
+| `/assistant`        | Authenticated | Private AI task assistant and history        |
+| `/account`          | Authenticated | Profile, appearance, security, and sessions  |
+| `/admin`            | Staff         | Administrative overview and metrics          |
+| `/admin/tasks`      | Staff         | Manage all tasks and owners                  |
+| `/admin/users`      | Staff         | Manage users, roles, and bans                |
+| `/admin/users/[id]` | Staff         | Review a user, their tasks, and access       |
+| `/admin/support`    | Staff         | Handle and transfer support conversations    |
+| `/admin/contact`    | Staff         | Review and reply to public contact messages  |
 
 ### API
 
