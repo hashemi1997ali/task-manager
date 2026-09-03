@@ -29,6 +29,7 @@ const copy = {
     edit: "Edit",
     delete: "Delete",
     completedOn: "Completed on",
+    completed: "Completed",
     overdue: "Overdue",
     quickStatus: "Quick status",
     setStatus: "Change status to",
@@ -45,6 +46,7 @@ const copy = {
     edit: "Bearbeiten",
     delete: "Löschen",
     completedOn: "Erledigt am",
+    completed: "Erledigt",
     overdue: "Überfällig",
     quickStatus: "Schnellstatus",
     setStatus: "Status ändern zu",
@@ -90,6 +92,7 @@ export function TaskCard({
   onStatusChange,
   statusUpdating,
   compact = false,
+  flat = false,
   showUpdatedAt = false,
 }: {
   task: Task;
@@ -100,6 +103,7 @@ export function TaskCard({
   onStatusChange?: (status: TaskStatus) => void;
   statusUpdating?: boolean;
   compact?: boolean;
+  flat?: boolean;
   showUpdatedAt?: boolean;
 }) {
   const { locale, intlLocale } = usePreferences();
@@ -121,16 +125,26 @@ export function TaskCard({
       spotlight={!compact}
       className={cn(
         "relative flex flex-col overflow-hidden transition-colors duration-200 hover:border-[var(--primary)]/50",
-        compact ? "min-h-0 p-4" : "min-h-72 p-5",
+        flat
+          ? "min-h-0 rounded-none border-0 bg-transparent p-4 shadow-none hover:border-transparent lg:bg-[var(--surface)]"
+          : compact
+            ? "min-h-0 p-4"
+            : "min-h-72 p-5",
+        flat &&
+          (overdue
+            ? "hover:bg-rose-50/60 dark:hover:bg-rose-500/8 lg:hover:bg-rose-50/60 lg:dark:hover:bg-rose-500/8"
+            : "hover:bg-[var(--surface-muted)] lg:hover:bg-[var(--surface-muted)]"),
       )}
     >
-      <span
-        className={cn(
-          "absolute inset-y-0 left-0 w-1.5",
-          overdue ? "bg-rose-600 dark:bg-rose-300" : statusStripeClasses[task.status],
-        )}
-        aria-hidden="true"
-      />
+      {!flat && (
+        <span
+          className={cn(
+            "absolute inset-y-0 left-0 w-1.5",
+            overdue ? "bg-rose-600 dark:bg-rose-300" : statusStripeClasses[task.status],
+          )}
+          aria-hidden="true"
+        />
+      )}
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap gap-2">
@@ -152,7 +166,13 @@ export function TaskCard({
                 {t.status[task.status]}
               </TaskStatusBadge>
             )}
-            <TaskPriorityBadge priority={task.priority}>
+            <TaskPriorityBadge
+              priority={task.priority}
+              className={cn(
+                flat &&
+                  "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--muted)] dark:border-[var(--border)] dark:bg-[var(--surface-muted)] dark:text-[var(--muted)]",
+              )}
+            >
               {t.priority[task.priority]}
             </TaskPriorityBadge>
           </div>
@@ -173,7 +193,10 @@ export function TaskCard({
             {onEdit && (
               <button
                 onClick={onEdit}
-                className="focus-ring grid size-11 place-items-center rounded-full text-[var(--muted)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary)]"
+                className={cn(
+                  "focus-ring grid size-11 place-items-center rounded-full text-[var(--muted)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary)]",
+                  flat && "size-9 rounded-lg",
+                )}
                 aria-label={`${t.edit}: ${task.title}`}
               >
                 <Edit3 className="size-4" />
@@ -182,7 +205,10 @@ export function TaskCard({
             {onDelete && (
               <button
                 onClick={onDelete}
-                className="focus-ring grid size-11 place-items-center rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-500/15 dark:hover:text-rose-300"
+                className={cn(
+                  "focus-ring grid size-11 place-items-center rounded-full text-slate-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-500/15 dark:hover:text-rose-300",
+                  flat && "size-9 rounded-lg",
+                )}
                 aria-label={`${t.delete}: ${task.title}`}
               >
                 <Trash2 className="size-4" />
@@ -247,8 +273,8 @@ export function TaskCard({
 
       <div
         className={cn(
-          "space-y-2 border-t text-xs text-[var(--muted)]",
-          compact ? "mt-3 pt-3" : "mt-5 pt-4",
+          "space-y-2 text-xs text-[var(--muted)]",
+          flat ? "mt-3" : compact ? "mt-3 border-t pt-3" : "mt-5 border-t pt-4",
         )}
       >
         <div
@@ -269,7 +295,7 @@ export function TaskCard({
             {overdue && <span> · {t.overdue}</span>}
           </span>
         </div>
-        {task.status === "done" && task.completedAt && (
+        {task.status === "done" && task.completedAt && !flat && (
           <div className="flex min-w-0 items-start gap-2 leading-5 text-emerald-700 dark:text-emerald-300">
             <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
             <span className="min-w-0">
@@ -280,11 +306,22 @@ export function TaskCard({
             </span>
           </div>
         )}
-        {showUpdatedAt && !(task.status === "done" && task.completedAt) && (
-          <div className="flex min-w-0 items-start gap-2 leading-5">
-            <Clock3 className="mt-0.5 size-4 shrink-0" />
+        {showUpdatedAt && (flat || !(task.status === "done" && task.completedAt)) && (
+          <div
+            className={cn(
+              "flex min-w-0 items-start gap-2 leading-5",
+              flat &&
+                task.status === "done" &&
+                "font-semibold text-emerald-700 dark:text-emerald-300",
+            )}
+          >
+            {flat && task.status === "done" ? (
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+            ) : (
+              <Clock3 className="mt-0.5 size-4 shrink-0" />
+            )}
             <span className="min-w-0">
-              {t.updated}{" "}
+              {flat && task.status === "done" ? t.completed : t.updated}{" "}
               <time dateTime={task.updatedAt}>
                 {formatDateTime(task.updatedAt, intlLocale)}
               </time>

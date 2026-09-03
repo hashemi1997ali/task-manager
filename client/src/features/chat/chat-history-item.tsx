@@ -28,10 +28,10 @@ export function ChatHistoryItem({
     <button
       type="button"
       className={cn(
-        "focus-ring grid min-h-24 w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-2 items-center gap-x-3 gap-y-2 border-b px-4 py-3 text-left transition-colors duration-200 active:bg-[var(--primary-soft)]/60",
+        "focus-ring grid min-h-[5.25rem] w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-2 items-center gap-x-3 gap-y-1.5 border-b border-[color-mix(in_srgb,var(--border)_54%,transparent)] px-4 py-3 text-left transition-colors duration-200 active:bg-[var(--surface-muted)]",
         selected
-          ? "bg-[var(--primary-soft)] text-[var(--foreground)] shadow-[inset_3px_0_0_var(--primary)]"
-          : "hover:bg-[color-mix(in_srgb,var(--surface-muted)_78%,var(--primary-soft))]",
+          ? "bg-[var(--surface-muted)] text-[var(--foreground)] shadow-[inset_3px_0_0_var(--primary)]"
+          : "hover:bg-[var(--surface-muted)]",
         className,
       )}
       {...buttonProps}

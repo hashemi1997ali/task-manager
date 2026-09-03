@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as Switch from "@radix-ui/react-switch";
 import { useQuery } from "@tanstack/react-query";
-import { Ban, Search } from "lucide-react";
+import { Ban, CircleDot, RotateCcw, Search, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -23,7 +23,7 @@ import { createProfileSchema, type ProfileFormValues } from "@/features/auth/sch
 import { getErrorMessage } from "@/lib/api-error";
 import { getBanReasonLabel } from "@/lib/domain-labels";
 import type { BanReason, User } from "@/lib/types";
-import { formatNumber, getId } from "@/lib/utils";
+import { cn, formatNumber, getId } from "@/lib/utils";
 import { usePreferences } from "@/providers/preferences-provider";
 
 const banReasons: BanReason[] = [
@@ -43,9 +43,9 @@ const copy = {
     description: "Manage user accounts, profiles, and access.",
     search: "Search by name or email…",
     allRoles: "All roles",
-    user: "user",
-    admin: "admin",
-    superAdmin: "super admin",
+    user: "User",
+    admin: "Admin",
+    superAdmin: "Super Admin",
     allStates: "All account states",
     status: "Status",
     active: "Active",
@@ -95,6 +95,7 @@ const copy = {
     users: "users",
     viewProfile: "Open profile and tasks",
     bannedReason: "Reason",
+    clearFilters: "Clear filters",
   },
   de: {
     eyebrow: "Zugriff und Sicherheit",
@@ -102,9 +103,9 @@ const copy = {
     description: "Verwalte Benutzerkonten, Profile und Zugriffe.",
     search: "Nach Name oder E-Mail suchen…",
     allRoles: "Alle Rollen",
-    user: "user",
-    admin: "admin",
-    superAdmin: "super admin",
+    user: "Benutzer",
+    admin: "Admin",
+    superAdmin: "Super Admin",
     allStates: "Alle Kontostatus",
     status: "Status",
     active: "Aktiv",
@@ -155,6 +156,7 @@ const copy = {
     users: "Benutzer",
     viewProfile: "Profil und Aufgaben öffnen",
     bannedReason: "Grund",
+    clearFilters: "Filter zurücksetzen",
   },
 } as const;
 
@@ -318,6 +320,12 @@ export function AdminUsersView() {
   const { locale, intlLocale } = usePreferences();
   const t = copy[locale];
   const { user: currentUser } = useAuth();
+  const filterFieldClass =
+    "border-[color-mix(in_srgb,var(--border)_62%,transparent)] px-3 py-1.5 transition-colors focus-within:text-[var(--foreground)]";
+  const filterLabelClass =
+    "flex items-center gap-1.5 text-[10px] font-extrabold tracking-[0.1em] text-[var(--muted)] uppercase";
+  const filterSelectClass =
+    "h-7 min-w-0 rounded-none border-0 bg-transparent px-0 shadow-none";
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [role, setRole] = useState<UserFilters["role"]>("");
@@ -348,39 +356,70 @@ export function AdminUsersView() {
     <div>
       <PageHeading title={t.title} description={t.description} />
 
-      <section className="mt-6 grid gap-3 rounded-[var(--container-radius)] border bg-[var(--surface)] p-3 md:grid-cols-[1fr_12rem_13rem]">
-        <label className="relative">
-          <Search className="pointer-events-none absolute start-3.5 top-4 size-4 text-[var(--muted)]" />
+      <section className="glass-panel mt-6 grid gap-3 rounded-[var(--container-radius)] p-3">
+        <label className="relative min-w-0">
+          <Search className="pointer-events-none absolute left-4 top-4 size-4 text-slate-400" />
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t.search}
-            className="ps-10"
+            className="h-12 rounded-xl border-transparent bg-[var(--surface-muted)] pl-10 shadow-none"
+            aria-label={t.search}
           />
         </label>
-        <Select
-          value={role}
-          onChange={(event) => {
-            setRole(event.target.value as UserFilters["role"]);
-            setPage(1);
-          }}
-        >
-          <option value="">{t.allRoles}</option>
-          <option value="user">{t.user}</option>
-          <option value="admin">{t.admin}</option>
-          <option value="super_admin">{t.superAdmin}</option>
-        </Select>
-        <Select
-          value={banned}
-          onChange={(event) => {
-            setBanned(event.target.value as UserFilters["banned"]);
-            setPage(1);
-          }}
-        >
-          <option value="">{t.allStates}</option>
-          <option value="false">{t.active}</option>
-          <option value="true">{t.banned}</option>
-        </Select>
+        <div className="grid grid-cols-2 gap-0 rounded-xl bg-[var(--surface-muted)] p-1 md:grid-cols-[repeat(2,minmax(0,1fr))_auto]">
+          <label className={cn("min-w-0 border-r", filterFieldClass)}>
+            <span className={filterLabelClass}>
+              <ShieldCheck className="size-3" aria-hidden="true" /> {t.role}
+            </span>
+            <Select
+              value={role}
+              onChange={(event) => {
+                setRole(event.target.value as UserFilters["role"]);
+                setPage(1);
+              }}
+              className={filterSelectClass}
+              aria-label={t.role}
+            >
+              <option value="">{t.allRoles}</option>
+              <option value="user">{t.user}</option>
+              <option value="admin">{t.admin}</option>
+              <option value="super_admin">{t.superAdmin}</option>
+            </Select>
+          </label>
+          <label className={cn("min-w-0 md:border-r", filterFieldClass)}>
+            <span className={filterLabelClass}>
+              <CircleDot className="size-3" aria-hidden="true" /> {t.status}
+            </span>
+            <Select
+              value={banned}
+              onChange={(event) => {
+                setBanned(event.target.value as UserFilters["banned"]);
+                setPage(1);
+              }}
+              className={filterSelectClass}
+              aria-label={t.status}
+            >
+              <option value="">{t.allStates}</option>
+              <option value="false">{t.active}</option>
+              <option value="true">{t.banned}</option>
+            </Select>
+          </label>
+          <Button
+            variant="ghost"
+            className="col-span-2 h-auto self-stretch rounded-lg border-t border-[color-mix(in_srgb,var(--border)_62%,transparent)] bg-transparent px-4 py-3 shadow-none md:col-span-1 md:border-t-0 md:py-0"
+            onClick={() => {
+              setSearch("");
+              setDebouncedSearch("");
+              setRole("");
+              setBanned("");
+              setPage(1);
+            }}
+            aria-label={t.clearFilters}
+          >
+            <RotateCcw className="size-4" /> {t.clearFilters}
+          </Button>
+        </div>
       </section>
 
       <div className="mt-6">
@@ -401,7 +440,7 @@ export function AdminUsersView() {
           </Card>
         ) : (
           <>
-            <div className="grid items-start gap-4 lg:grid-cols-2 xl:hidden">
+            <div className="overflow-hidden rounded-[var(--container-radius)] border border-[color-mix(in_srgb,var(--border)_82%,transparent)] bg-[var(--surface)] [&>*+*]:border-t [&>*+*]:border-[color-mix(in_srgb,var(--border)_54%,transparent)] lg:grid lg:grid-cols-2 lg:[&>*+*]:border-t-0 lg:[&>*]:border-b lg:[&>*]:border-[color-mix(in_srgb,var(--border)_54%,transparent)] lg:[&>*:nth-child(odd)]:border-r xl:hidden">
               {users.map((user) => {
                 const id = getId(user);
                 const self = id === currentUser?.id || id === currentUser?._id;
@@ -414,20 +453,13 @@ export function AdminUsersView() {
                 return (
                   <Card
                     key={id}
-                    className="group relative overflow-hidden p-4 transition-colors duration-200 hover:border-[var(--primary)]/50"
+                    className={cn(
+                      "group relative min-h-0 rounded-none border-0 bg-transparent p-4 shadow-none transition-colors duration-200 hover:border-transparent",
+                      isBanned
+                        ? "hover:bg-rose-50/60 dark:hover:bg-rose-500/8"
+                        : "hover:bg-[var(--surface-muted)]",
+                    )}
                   >
-                    <span
-                      className={`absolute inset-y-0 left-0 w-1.5 ${
-                        isBanned
-                          ? "bg-rose-700 dark:bg-rose-300"
-                          : superAdmin
-                            ? "bg-violet-700 dark:bg-violet-300"
-                            : admin
-                              ? "bg-indigo-700 dark:bg-indigo-300"
-                              : "bg-slate-700 dark:bg-slate-300"
-                      }`}
-                      aria-hidden="true"
-                    />
                     <div className="flex flex-wrap items-center gap-2">
                       <RoleBadge role={roleValue}>{roleLabel}</RoleBadge>
                       <AccountStatusBadge
@@ -441,9 +473,9 @@ export function AdminUsersView() {
                         {isBanned ? t.banned : t.active}
                       </AccountStatusBadge>
                     </div>
-                    <div className="mt-4 flex min-w-0 items-center gap-3">
-                      <UserAvatar user={user} className="size-11" imageSizes="44px" />
-                      <div className="flex min-h-11 min-w-0 flex-1 flex-col justify-center">
+                    <div className="mt-3 flex min-w-0 items-center gap-3">
+                      <UserAvatar user={user} className="size-10" imageSizes="40px" />
+                      <div className="flex min-h-10 min-w-0 flex-1 flex-col justify-center">
                         <Link
                           href={`/admin/users/${id}`}
                           className="focus-ring min-w-0 truncate rounded-[var(--control-radius)] text-sm font-bold hover:text-[var(--primary)]"
@@ -470,14 +502,14 @@ export function AdminUsersView() {
                 );
               })}
             </div>
-            <Card className="hidden overflow-hidden xl:block">
-              <div className="grid grid-cols-[minmax(12rem,1.3fr)_minmax(12rem,1.25fr)_7rem_7rem] gap-3 border-b bg-[var(--surface-muted)] px-4 py-3 text-xs font-semibold text-[var(--muted)]">
+            <Card className="hidden overflow-hidden border-[color-mix(in_srgb,var(--border)_82%,transparent)] bg-[var(--surface)] shadow-none hover:border-[color-mix(in_srgb,var(--border)_82%,transparent)] xl:block">
+              <div className="grid grid-cols-[minmax(12rem,1.3fr)_minmax(12rem,1.25fr)_7rem_7rem] gap-3 border-b bg-[color-mix(in_srgb,var(--surface-muted)_72%,var(--surface))] px-4 py-3.5 text-[10px] font-extrabold tracking-[0.12em] text-[var(--muted)] uppercase">
                 <span>{t.users}</span>
                 <span>{t.email}</span>
                 <span>{t.role}</span>
                 <span>{t.status}</span>
               </div>
-              <div className="divide-y">
+              <div className="divide-y divide-[color-mix(in_srgb,var(--border)_54%,transparent)]">
                 {users.map((user) => {
                   const id = getId(user);
                   const self = id === currentUser?.id || id === currentUser?._id;
@@ -489,25 +521,18 @@ export function AdminUsersView() {
                   return (
                     <article
                       key={id}
-                      className="relative grid min-w-0 grid-cols-[minmax(12rem,1.3fr)_minmax(12rem,1.25fr)_7rem_7rem] items-center gap-3 overflow-hidden p-4 transition-colors hover:bg-[var(--surface-muted)]"
+                      className={cn(
+                        "relative grid min-h-[4.75rem] min-w-0 grid-cols-[minmax(12rem,1.3fr)_minmax(12rem,1.25fr)_7rem_7rem] items-center gap-3 overflow-hidden px-4 py-3 transition-colors duration-200",
+                        isBanned
+                          ? "hover:bg-rose-50/60 dark:hover:bg-rose-500/8"
+                          : "hover:bg-[var(--surface-muted)]",
+                      )}
                     >
-                      <span
-                        className={`absolute inset-y-0 left-0 w-1.5 ${
-                          isBanned
-                            ? "bg-rose-700 dark:bg-rose-300"
-                            : superAdmin
-                              ? "bg-violet-700 dark:bg-violet-300"
-                              : admin
-                                ? "bg-indigo-700 dark:bg-indigo-300"
-                                : "bg-slate-700 dark:bg-slate-300"
-                        }`}
-                        aria-hidden="true"
-                      />
-                      <div className="flex min-w-0 items-center gap-3">
-                        <UserAvatar user={user} className="size-9" imageSizes="36px" />
+                      <div className="flex min-w-0 items-center gap-3 pl-1">
+                        <UserAvatar user={user} className="size-8" imageSizes="32px" />
                         <Link
                           href={`/admin/users/${id}`}
-                          className="focus-ring min-w-0 truncate rounded text-sm font-semibold hover:text-[var(--primary)]"
+                          className="focus-ring min-w-0 truncate rounded text-sm font-bold hover:text-[var(--primary)]"
                           title={t.viewProfile}
                         >
                           {user.firstName} {user.lastName}
@@ -524,9 +549,12 @@ export function AdminUsersView() {
                       >
                         {user.email}
                       </p>
-                      <RoleBadge role={roleValue}>{roleLabel}</RoleBadge>
+                      <RoleBadge role={roleValue} className="justify-self-start">
+                        {roleLabel}
+                      </RoleBadge>
                       <AccountStatusBadge
                         banned={isBanned}
+                        className="justify-self-start"
                         title={
                           user.ban?.isBanned
                             ? `${t.bannedReason}: ${getBanReasonLabel(user.ban.reason, locale)}`

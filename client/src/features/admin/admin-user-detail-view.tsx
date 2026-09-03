@@ -76,6 +76,7 @@ const copy = {
     userSaved: "User details saved.",
     bannedDone: "The account was banned.",
     unbannedDone: "The account was unbanned.",
+    accountControls: "Account controls",
     page: "Page",
     of: "of",
     previous: "Previous",
@@ -110,6 +111,7 @@ const copy = {
     userSaved: "Benutzerdaten gespeichert.",
     bannedDone: "Das Konto wurde gesperrt.",
     unbannedDone: "Die Sperre wurde aufgehoben.",
+    accountControls: "Kontoverwaltung",
     page: "Seite",
     of: "von",
     previous: "Zurück",
@@ -249,7 +251,7 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
       : "—";
 
   return (
-    <div>
+    <div className="pt-3 md:pt-6">
       <Link
         href="/admin/users"
         className="focus-ring inline-flex items-center gap-2 rounded-full text-sm font-bold text-[var(--muted)] hover:text-[var(--primary)]"
@@ -259,37 +261,17 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
       </Link>
 
       <div className="mt-6 min-w-0">
-        <Card className="min-w-0 overflow-hidden p-5 md:p-6">
-          <div className="min-w-0">
+        <section className="min-w-0 overflow-hidden rounded-[var(--container-radius)] border border-[color-mix(in_srgb,var(--border)_82%,transparent)] bg-[var(--surface)]">
+          <div className="grid min-w-0 gap-5 p-5 md:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-6">
             <div className="min-w-0">
-              <div className="flex min-w-0 items-start justify-between gap-3">
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <RoleBadge role={highestRole}>
-                    {getUserRoleLabel(highestRole, locale)}
-                  </RoleBadge>
-                  <AccountStatusBadge banned={Boolean(user.ban?.isBanned)}>
-                    {user.ban?.isBanned ? t.banned : t.active}
-                  </AccountStatusBadge>
-                </div>
-                {mayManageUser && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="size-11 shrink-0 px-0 sm:w-auto sm:px-3"
-                    onClick={() => setEditingUser(user)}
-                    aria-label={t.editUser}
-                    title={t.editUser}
-                  >
-                    <Edit3 className="size-4" />
-                    <span className="hidden sm:inline">{t.editUser}</span>
-                  </Button>
-                )}
-              </div>
-
-              <div className="mt-4 flex min-w-0 items-center gap-4">
-                <UserAvatar user={user} className="size-16 shrink-0" imageSizes="64px" />
+              <div className="flex min-w-0 items-center gap-4 sm:gap-5">
+                <UserAvatar
+                  user={user}
+                  className="size-16 shrink-0 sm:size-20"
+                  imageSizes="80px"
+                />
                 <div className="min-w-0">
-                  <h1 className="break-words text-2xl font-black">
+                  <h1 className="break-words text-2xl font-black tracking-tight sm:text-3xl">
                     {user.firstName} {user.lastName}
                   </h1>
                   <p className="mt-1 break-all text-sm text-[var(--muted)]">
@@ -298,21 +280,45 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
                 </div>
               </div>
 
+              <div className="mt-4 flex min-w-0 flex-wrap items-center gap-2">
+                <RoleBadge role={highestRole}>
+                  {getUserRoleLabel(highestRole, locale)}
+                </RoleBadge>
+                <AccountStatusBadge banned={Boolean(user.ban?.isBanned)}>
+                  {user.ban?.isBanned ? t.banned : t.active}
+                </AccountStatusBadge>
+              </div>
+
               {user.ban?.isBanned && (
                 <p className="mt-3 w-fit max-w-full rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
                   <span className="font-black">{t.banReason}:</span>{" "}
                   {getBanReasonLabel(user.ban.reason, locale)}
                 </p>
               )}
+            </div>
 
-              {(mayBanUser || mayDeleteUser) && (
-                <div className="mt-5 grid gap-2 sm:flex sm:flex-wrap">
+            {(mayManageUser || mayBanUser || mayDeleteUser) && (
+              <div className="flex flex-col items-start gap-3 border-t border-[color-mix(in_srgb,var(--border)_62%,transparent)] pt-4 lg:min-w-40 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+                <p className="text-[10px] font-extrabold tracking-[0.12em] text-[var(--muted)] uppercase">
+                  {t.accountControls}
+                </p>
+                <div className="flex flex-wrap gap-2 lg:grid lg:w-full lg:grid-cols-1">
+                  {mayManageUser && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="px-3"
+                      onClick={() => setEditingUser(user)}
+                    >
+                      <Edit3 className="size-4" />
+                      {t.editUser}
+                    </Button>
+                  )}
                   {mayBanUser &&
                     (user.ban?.isBanned ? (
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="w-full sm:w-auto"
                         onClick={() => setUnbanningUser(user)}
                       >
                         <RotateCcw className="size-4" />
@@ -322,7 +328,6 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
                       <Button
                         variant="danger"
                         size="sm"
-                        className="w-full sm:w-auto"
                         onClick={() => setBanningUser(user)}
                       >
                         <Ban className="size-4" />
@@ -333,7 +338,6 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
                     <Button
                       variant="danger"
                       size="sm"
-                      className="w-full sm:w-auto"
                       onClick={() => setDeletingUser(user)}
                     >
                       <Trash2 className="size-4" />
@@ -341,33 +345,38 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
                     </Button>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
 
-            <dl className="mt-6 grid gap-2 text-sm xl:grid-cols-3">
-              <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-[var(--surface-muted)] px-3 py-2.5">
-                <dt className="flex min-w-0 items-center gap-2 text-[var(--muted)]">
-                  <CheckSquare2 className="size-4 shrink-0" /> {t.taskCount}
-                </dt>
-                <dd className="shrink-0 font-black">{stats.taskCount}</dd>
+          <dl className="grid divide-y divide-[color-mix(in_srgb,var(--border)_54%,transparent)] border-t border-[color-mix(in_srgb,var(--border)_62%,transparent)] text-sm sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <div className="flex min-h-20 items-center gap-3 px-5 py-4">
+              <CheckSquare2 className="size-5 shrink-0 text-[var(--muted)]" />
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-4 sm:block">
+                <dt className="text-xs text-[var(--muted)]">{t.taskCount}</dt>
+                <dd className="text-lg font-black sm:mt-0.5">{stats.taskCount}</dd>
               </div>
-              <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-[var(--surface-muted)] px-3 py-2.5">
-                <dt className="flex min-w-0 items-center gap-2 text-[var(--muted)]">
-                  <Monitor className="size-4 shrink-0" /> {t.sessions}
-                </dt>
-                <dd className="shrink-0 font-black">{stats.activeSessionCount}</dd>
+            </div>
+            <div className="flex min-h-20 items-center gap-3 px-5 py-4">
+              <Monitor className="size-5 shrink-0 text-[var(--muted)]" />
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-4 sm:block">
+                <dt className="text-xs text-[var(--muted)]">{t.sessions}</dt>
+                <dd className="text-lg font-black sm:mt-0.5">
+                  {stats.activeSessionCount}
+                </dd>
               </div>
-              <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-[var(--surface-muted)] px-3 py-2.5">
-                <dt className="flex min-w-0 items-center gap-2 text-[var(--muted)]">
-                  <Calendar className="size-4 shrink-0" /> {t.joined}
-                </dt>
-                <dd className="shrink-0 text-right text-xs font-black whitespace-nowrap">
+            </div>
+            <div className="flex min-h-20 items-center gap-3 px-5 py-4">
+              <Calendar className="size-5 shrink-0 text-[var(--muted)]" />
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-4 sm:block">
+                <dt className="text-xs text-[var(--muted)]">{t.joined}</dt>
+                <dd className="text-right text-xs font-bold whitespace-nowrap sm:mt-1 sm:text-left">
                   {formatDate(user.createdAt)}
                 </dd>
               </div>
-            </dl>
-          </div>
-        </Card>
+            </div>
+          </dl>
+        </section>
 
         <div id="tasks" className="mt-8 min-w-0 scroll-mt-6">
           <h2 className="text-2xl font-black">{t.tasksHeading(user.firstName)}</h2>
@@ -389,7 +398,7 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
             </Card>
           ) : (
             <div className="mt-5">
-              <div className="grid min-w-0 items-start gap-4 lg:grid-cols-2 xl:hidden">
+              <div className="min-w-0 overflow-hidden rounded-[var(--container-radius)] border border-[color-mix(in_srgb,var(--border)_82%,transparent)] bg-[var(--surface)] [&>*+*]:border-t [&>*+*]:border-[color-mix(in_srgb,var(--border)_54%,transparent)] lg:grid lg:grid-cols-2 lg:[&>*+*]:border-t-0 lg:[&>*]:border-b lg:[&>*]:border-[color-mix(in_srgb,var(--border)_54%,transparent)] lg:[&>*:nth-child(odd)]:border-r xl:hidden">
                 {tasks.map((task) => {
                   const taskId = getId(task);
                   return (
@@ -399,6 +408,7 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
                       referenceTime={tasksQuery.dataUpdatedAt}
                       showUpdatedAt
                       compact
+                      flat
                       onEdit={isSuperAdmin ? () => setEditingTask(task) : undefined}
                       onDelete={isSuperAdmin ? () => setDeletingTask(task) : undefined}
                       onStatusChange={
@@ -418,6 +428,7 @@ export function AdminUserDetailView({ userId }: { userId: string }) {
               <TaskTable
                 tasks={tasks}
                 referenceTime={tasksQuery.dataUpdatedAt}
+                polished
                 onEdit={isSuperAdmin ? setEditingTask : undefined}
                 onDelete={isSuperAdmin ? setDeletingTask : undefined}
                 onStatusChange={

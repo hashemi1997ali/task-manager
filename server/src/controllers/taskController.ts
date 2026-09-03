@@ -1,10 +1,10 @@
-import type { QueryFilter, SortOrder } from "mongoose";
+import type { QueryFilter } from "mongoose";
 import mongoose from "mongoose";
 import type { RequestHandler } from "express";
 
 import { Task, User, type ITask } from "#models";
 import { getTodayDashboardData } from "#services";
-import { AppError, applyTaskStatusTransition } from "#utils";
+import { AppError, applyTaskStatusTransition, createDueDateSortPipeline } from "#utils";
 import { taskQuerySchema } from "#schemas";
 
 const escapeRegExp = (value: string): string =>
@@ -48,7 +48,7 @@ export const createTask: RequestHandler = async (request, response) => {
 
 export const getTasks: RequestHandler = async (request, response) => {
   const owner = requireUserId(request.user?.userId);
-  const filter: QueryFilter<ITask> = { owner };
+  const filter: QueryFilter<ITask> = { owner: new mongoose.Types.ObjectId(owner) };
   const query = taskQuerySchema.parse(request.query);
 
   if (query.status) {
@@ -64,8 +64,12 @@ export const getTasks: RequestHandler = async (request, response) => {
     filter.$or = [{ title: regex }, { description: regex }];
   }
 
-  if (query.dueBefore || query.dueAfter) {
-    const dueDateFilter: { $lte?: Date; $gte?: Date } = {};
+  if (query.overdue) {
+    filter.$and = [...(filter.$and ?? []), { status: { $ne: "done" } }];
+  }
+
+  if (query.dueBefore || query.dueAfter || query.overdue) {
+    const dueDateFilter: { $lt?: Date; $lte?: Date; $gte?: Date } = {};
 
     if (query.dueBefore) {
       dueDateFilter.$lte = query.dueBefore;
@@ -75,20 +79,25 @@ export const getTasks: RequestHandler = async (request, response) => {
       dueDateFilter.$gte = query.dueAfter;
     }
 
+    if (query.overdue) {
+      dueDateFilter.$lt = new Date();
+    }
+
     filter.dueDate = dueDateFilter;
   }
 
   const { page, limit } = query;
   const skip = (page - 1) * limit;
-  const order: SortOrder = query.order === "asc" ? 1 : -1;
+  const order: 1 | -1 = query.order === "asc" ? 1 : -1;
+  const tasksPromise =
+    query.sortBy === "dueDate"
+      ? Task.aggregate(createDueDateSortPipeline(filter, order, skip, limit))
+      : Task.find(filter)
+          .sort({ [query.sortBy]: order, _id: order })
+          .skip(skip)
+          .limit(limit);
 
-  const [tasks, total] = await Promise.all([
-    Task.find(filter)
-      .sort({ [query.sortBy]: order, _id: order })
-      .skip(skip)
-      .limit(limit),
-    Task.countDocuments(filter),
-  ]);
+  const [tasks, total] = await Promise.all([tasksPromise, Task.countDocuments(filter)]);
 
   response.status(200).json({
     success: true,

@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import mongoose, { type QueryFilter, type SortOrder } from "mongoose";
+import mongoose, { type QueryFilter } from "mongoose";
 
 import {
   ContactSubmission,
@@ -19,6 +19,7 @@ import {
   applyTaskStatusTransition,
   canDeleteAccount,
   canManageBan,
+  createDueDateSortPipeline,
 } from "#utils";
 import {
   adminTaskQuerySchema,
@@ -103,17 +104,35 @@ export const getAdminTasks: RequestHandler = async (request, response) => {
     filter.$or = [{ title: search }, { description: search }];
   }
 
-  const skip = (query.page - 1) * query.limit;
-  const order: SortOrder = query.order === "asc" ? 1 : -1;
+  if (query.overdue) {
+    filter.$and = [
+      ...(filter.$and ?? []),
+      { status: { $ne: "done" } },
+      { dueDate: { $lt: new Date() } },
+    ];
+  }
 
-  const [tasks, total] = await Promise.all([
-    Task.find(filter)
-      .populate("owner", "firstName lastName email roles profileImage")
-      .sort({ [query.sortBy]: order, _id: order })
-      .skip(skip)
-      .limit(query.limit),
+  const skip = (query.page - 1) * query.limit;
+  const order: 1 | -1 = query.order === "asc" ? 1 : -1;
+  const sortByDueDate = query.sortBy === "dueDate";
+  const tasksPromise = sortByDueDate
+    ? Task.aggregate(createDueDateSortPipeline(filter, order, skip, query.limit))
+    : Task.find(filter)
+        .populate("owner", "firstName lastName email roles profileImage")
+        .sort({ [query.sortBy]: order, _id: order })
+        .skip(skip)
+        .limit(query.limit);
+
+  const [unpopulatedTasks, total] = await Promise.all([
+    tasksPromise,
     Task.countDocuments(filter),
   ]);
+  const tasks = sortByDueDate
+    ? await Task.populate(unpopulatedTasks, {
+        path: "owner",
+        select: "firstName lastName email roles profileImage",
+      })
+    : unpopulatedTasks;
 
   response.status(200).json({
     success: true,
@@ -133,7 +152,6 @@ export const getAdminOverview: RequestHandler = async (_request, response) => {
   weeklyStart.setUTCDate(weeklyStart.getUTCDate() - 6);
   const [
     totalUsers,
-    activeUsers,
     totalTasks,
     openTasks,
     overdueTasks,
@@ -143,7 +161,6 @@ export const getAdminOverview: RequestHandler = async (_request, response) => {
     weeklyCompleted,
   ] = await Promise.all([
     User.countDocuments(),
-    User.countDocuments({ $or: [{ ban: null }, { "ban.isBanned": { $ne: true } }] }),
     Task.countDocuments(),
     Task.countDocuments({ status: { $ne: "done" } }),
     Task.countDocuments({ status: { $ne: "done" }, dueDate: { $lt: now } }),
@@ -173,14 +190,18 @@ export const getAdminOverview: RequestHandler = async (_request, response) => {
     const key = date.toISOString().slice(0, 10);
     return { date: key, completed: weeklyMap.get(key) ?? 0 };
   });
+  const completedTasks = totalTasks - openTasks;
+  const completedToday = weeklyMap.get(todayStart.toISOString().slice(0, 10)) ?? 0;
 
   response.status(200).json({
     success: true,
     data: {
       totalUsers,
-      activeUsers,
       totalTasks,
       openTasks,
+      completedTasks,
+      completedToday,
+      completionRate: totalTasks ? completedTasks / totalTasks : 0,
       overdueTasks,
       waitingSupport,
       unansweredContacts,
@@ -203,16 +224,24 @@ export const getAdminUserTasks: RequestHandler = async (request, response) => {
     const search = new RegExp(escapeRegExp(query.search), "i");
     filter.$or = [{ title: search }, { description: search }];
   }
+  if (query.overdue) {
+    filter.$and = [
+      ...(filter.$and ?? []),
+      { status: { $ne: "done" } },
+      { dueDate: { $lt: new Date() } },
+    ];
+  }
 
   const skip = (query.page - 1) * query.limit;
-  const order: SortOrder = query.order === "asc" ? 1 : -1;
-  const [tasks, total] = await Promise.all([
-    Task.find(filter)
-      .sort({ [query.sortBy]: order, _id: order })
-      .skip(skip)
-      .limit(query.limit),
-    Task.countDocuments(filter),
-  ]);
+  const order: 1 | -1 = query.order === "asc" ? 1 : -1;
+  const tasksPromise =
+    query.sortBy === "dueDate"
+      ? Task.aggregate(createDueDateSortPipeline(filter, order, skip, query.limit))
+      : Task.find(filter)
+          .sort({ [query.sortBy]: order, _id: order })
+          .skip(skip)
+          .limit(query.limit);
+  const [tasks, total] = await Promise.all([tasksPromise, Task.countDocuments(filter)]);
 
   response.status(200).json({
     success: true,

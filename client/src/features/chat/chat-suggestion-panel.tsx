@@ -15,7 +15,7 @@ export function ChatSuggestionPanel({
             key={suggestion}
             type="button"
             onClick={() => onSelect(suggestion)}
-            className="focus-ring block min-h-11 w-full whitespace-pre-wrap rounded-[1.25rem] border bg-[var(--surface)] p-4 text-left text-sm leading-6 shadow-[0_8px_24px_rgb(34_28_76_/_0.05)] transition-colors hover:border-[var(--primary)]"
+            className="focus-ring block min-h-11 w-full whitespace-pre-wrap rounded-[1.25rem] border border-[color-mix(in_srgb,var(--border)_72%,transparent)] bg-[var(--surface)] p-4 text-left text-sm leading-6 transition-colors hover:border-[var(--primary)] hover:bg-[var(--surface-muted)]"
           >
             {suggestion}
           </button>

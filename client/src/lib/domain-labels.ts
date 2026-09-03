@@ -24,14 +24,14 @@ const banReasonLabels: Record<Locale, Record<BanReason, string>> = {
 
 const roleLabels: Record<Locale, Record<UserRole, string>> = {
   en: {
-    user: "user",
-    admin: "admin",
-    super_admin: "super admin",
+    user: "User",
+    admin: "Admin",
+    super_admin: "Super Admin",
   },
   de: {
-    user: "user",
-    admin: "admin",
-    super_admin: "super admin",
+    user: "Benutzer",
+    admin: "Admin",
+    super_admin: "Super Admin",
   },
 };
 

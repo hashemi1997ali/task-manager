@@ -398,9 +398,7 @@ export function AssistantView() {
 
   if (conversationsQuery.isPending) return <LoadingState />;
   if (conversationsQuery.isError) {
-    return (
-      <ErrorState message={getErrorMessage(conversationsQuery.error, locale)} />
-    );
+    return <ErrorState message={getErrorMessage(conversationsQuery.error, locale)} />;
   }
 
   const submit = (value = message) => {
@@ -627,7 +625,7 @@ export function AssistantView() {
             />
           </div>
 
-          <footer className="shrink-0 bg-[var(--surface)] p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <footer className="chat-composer-footer shrink-0 p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <div className="mb-2 flex flex-wrap gap-2">
               <Button
                 variant="secondary"
@@ -675,7 +673,6 @@ export function AssistantView() {
             </form>
           </footer>
         </section>
-
       </div>
     </div>
   );

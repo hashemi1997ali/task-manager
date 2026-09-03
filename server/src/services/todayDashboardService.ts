@@ -120,112 +120,144 @@ export const getTodayDashboardData = async ({
   const todayStart = zonedMidnightToUtc(today, timeZone);
   const tomorrowStart = zonedMidnightToUtc(addCalendarDays(today, 1), timeZone);
   const historyStart = zonedMidnightToUtc(addCalendarDays(today, -6), timeZone);
-  const upcomingEnd = zonedMidnightToUtc(addCalendarDays(today, 6), timeZone);
+  const upcomingEnd = zonedMidnightToUtc(addCalendarDays(today, 8), timeZone);
   const weeklyKeys = Array.from({ length: 7 }, (_, index) =>
     dateKey(addCalendarDays(today, index - 6)),
   );
-  const upcomingKeys = Array.from({ length: 5 }, (_, index) =>
+  const upcomingKeys = Array.from({ length: 7 }, (_, index) =>
     dateKey(addCalendarDays(today, index + 1)),
   );
 
-  const [todayTasks, focusTasks, upcomingCounts, weeklyCompleted, conflictBuckets] =
-    await Promise.all([
-      Task.find({
-        owner,
-        dueDate: { $gte: todayStart, $lt: tomorrowStart },
-      })
-        .select(
-          "title description status priority dueDate completedAt owner createdAt updatedAt",
-        )
-        .lean<DashboardTask[]>(),
-      Task.find({
-        owner,
-        dueDate: { $ne: null, $lt: tomorrowStart },
-        $or: [
-          { dueDate: { $lt: todayStart }, status: { $ne: "done" } },
-          { dueDate: { $gte: todayStart, $lt: tomorrowStart } },
-        ],
-      })
-        .select(
-          "title description status priority dueDate completedAt owner createdAt updatedAt",
-        )
-        .sort({ dueDate: 1, updatedAt: -1 })
-        .limit(20)
-        .lean<DashboardTask[]>(),
-      Task.aggregate<{ _id: string; count: number }>([
-        {
-          $match: {
-            owner,
-            status: { $ne: "done" },
-            dueDate: { $gte: tomorrowStart, $lt: upcomingEnd },
-          },
+  const [
+    todayTasks,
+    focusTasks,
+    upcomingCounts,
+    weeklyCompleted,
+    conflictBuckets,
+    overallTaskSummary,
+  ] = await Promise.all([
+    Task.find({
+      owner,
+      dueDate: { $gte: todayStart, $lt: tomorrowStart },
+    })
+      .select(
+        "title description status priority dueDate completedAt owner createdAt updatedAt",
+      )
+      .lean<DashboardTask[]>(),
+    Task.find({
+      owner,
+      dueDate: { $ne: null, $lt: tomorrowStart },
+      $or: [
+        { dueDate: { $lt: todayStart }, status: { $ne: "done" } },
+        { dueDate: { $gte: todayStart, $lt: tomorrowStart } },
+      ],
+    })
+      .select(
+        "title description status priority dueDate completedAt owner createdAt updatedAt",
+      )
+      .sort({ dueDate: 1, updatedAt: -1 })
+      .limit(20)
+      .lean<DashboardTask[]>(),
+    Task.aggregate<{ _id: string; count: number }>([
+      {
+        $match: {
+          owner,
+          status: { $ne: "done" },
+          dueDate: { $gte: tomorrowStart, $lt: upcomingEnd },
         },
-        {
-          $group: {
-            _id: {
-              $dateToString: {
-                date: "$dueDate",
-                format: "%Y-%m-%d",
-                timezone: timeZone,
-              },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              date: "$dueDate",
+              format: "%Y-%m-%d",
+              timezone: timeZone,
             },
-            count: { $sum: 1 },
           },
+          count: { $sum: 1 },
         },
-      ]),
-      Task.aggregate<{ _id: string; count: number }>([
-        {
-          $match: {
-            owner,
-            completedAt: { $gte: historyStart, $lt: tomorrowStart },
-          },
+      },
+    ]),
+    Task.aggregate<{ _id: string; count: number }>([
+      {
+        $match: {
+          owner,
+          completedAt: { $gte: historyStart, $lt: tomorrowStart },
         },
-        {
-          $group: {
-            _id: {
-              $dateToString: {
-                date: "$completedAt",
-                format: "%Y-%m-%d",
-                timezone: timeZone,
-              },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              date: "$completedAt",
+              format: "%Y-%m-%d",
+              timezone: timeZone,
             },
-            count: { $sum: 1 },
           },
+          count: { $sum: 1 },
         },
-      ]),
-      Task.aggregate<{ _id: string; count: number }>([
-        {
-          $match: {
-            owner,
-            status: { $ne: "done" },
-            dueDate: { $gte: todayStart, $lt: upcomingEnd },
-          },
+      },
+    ]),
+    Task.aggregate<{ _id: string; count: number }>([
+      {
+        $match: {
+          owner,
+          status: { $ne: "done" },
+          dueDate: { $gte: todayStart, $lt: upcomingEnd },
         },
-        {
-          $group: {
-            _id: {
-              $dateToString: {
-                date: "$dueDate",
-                format: "%Y-%m-%dT%H",
-                timezone: timeZone,
-              },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              date: "$dueDate",
+              format: "%Y-%m-%dT%H",
+              timezone: timeZone,
             },
-            count: { $sum: 1 },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ]),
+    Task.aggregate<{ total: number; completed: number; overdue: number }>([
+      { $match: { owner } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          completed: {
+            $sum: { $cond: [{ $eq: ["$status", "done"] }, 1, 0] },
+          },
+          overdue: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: ["$status", "done"] },
+                    { $ne: ["$dueDate", null] },
+                    { $lt: ["$dueDate", todayStart] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
           },
         },
-        { $match: { count: { $gt: 1 } } },
-      ]),
-    ]);
+      },
+      { $project: { _id: 0, total: 1, completed: 1, overdue: 1 } },
+    ]),
+  ]);
 
-  const completedToday = todayTasks.filter((task) => task.status === "done").length;
-  const overdue = focusTasks.filter(
-    (task) =>
-      task.status !== "done" &&
-      task.dueDate !== null &&
-      task.dueDate !== undefined &&
-      task.dueDate < todayStart,
-  ).length;
-  const dueToday = todayTasks.length - completedToday;
+  const overallTasks = overallTaskSummary[0] ?? {
+    total: 0,
+    completed: 0,
+    overdue: 0,
+  };
+  const overdue = overallTasks.overdue;
+  const dueToday = todayTasks.filter((task) => task.status !== "done").length;
   const highPriority = focusTasks.filter(
     (task) => task.status !== "done" && task.priority === "high",
   ).length;
@@ -242,15 +274,20 @@ export const getTodayDashboardData = async ({
     .slice(0, 5);
   const upcomingMap = new Map(upcomingCounts.map((entry) => [entry._id, entry.count]));
   const weeklyMap = new Map(weeklyCompleted.map((entry) => [entry._id, entry.count]));
+  const completedToday = weeklyMap.get(dateKey(today)) ?? 0;
 
   return {
     generatedAt: now.toISOString(),
     timeZone,
     stats: {
-      tasksToday: todayTasks.length,
+      tasksToday: dueToday,
       completed: completedToday,
       overdue,
-      completionRate: todayTasks.length ? completedToday / todayTasks.length : 0,
+      totalTasks: overallTasks.total,
+      totalCompleted: overallTasks.completed,
+      completionRate: overallTasks.total
+        ? overallTasks.completed / overallTasks.total
+        : 0,
     },
     focusTasks: orderedFocusTasks,
     upcoming: upcomingKeys.map((date) => ({

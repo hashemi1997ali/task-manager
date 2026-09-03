@@ -201,7 +201,7 @@ export function AdminContactView() {
       ) : (
         <div
           className={cn(
-            "mt-5 grid min-h-[38rem] overflow-hidden rounded-[var(--container-radius)] border bg-[var(--surface)] md:min-h-0 md:flex-1 xl:grid-cols-[18rem_minmax(0,1fr)]",
+            "chat-workspace mt-5 grid min-h-[38rem] overflow-hidden rounded-[var(--container-radius)] md:min-h-0 md:flex-1 xl:grid-cols-[18rem_minmax(0,1fr)]",
             threadOpen &&
               "max-md:fixed max-md:inset-0 max-md:z-50 max-md:mt-0 max-md:h-dvh max-md:min-h-0 max-md:rounded-none max-md:border-0",
           )}
@@ -212,7 +212,7 @@ export function AdminContactView() {
               threadOpen ? "max-xl:hidden xl:flex" : "flex",
             )}
           >
-            <div className="flex h-16 shrink-0 items-center border-b px-4">
+            <div className="chat-section-header flex h-16 shrink-0 items-center px-4">
               <h2 className="text-sm font-semibold">{t.history}</h2>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
@@ -300,7 +300,7 @@ export function AdminContactView() {
                     </FormStatusBadge>
                   }
                 />
-                <div className="relative isolate min-h-0 flex-1 overflow-hidden">
+                <div className="chat-message-stream relative isolate min-h-0 flex-1 overflow-hidden">
                   <div
                     ref={messagesRef}
                     className="absolute inset-0 overflow-y-auto px-4 pb-4"
@@ -340,7 +340,7 @@ export function AdminContactView() {
                     }}
                   />
                 </div>
-                <footer className="shrink-0 border-t bg-[var(--surface)] p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <footer className="chat-composer-footer shrink-0 p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                   <div className="mb-2 flex flex-wrap gap-2">
                     <Button
                       variant="secondary"
@@ -359,7 +359,7 @@ export function AdminContactView() {
                       {suggestions.length > 0 ? t.hideSuggestions : t.suggestions}
                     </Button>
                   </div>
-                  <div className="flex items-end gap-2 rounded-[var(--control-radius)] border bg-[var(--background)] p-2 focus-within:border-[var(--primary)]">
+                  <div className="chat-composer-shell flex items-end gap-2">
                     <textarea
                       value={reply}
                       onChange={(event) => setReply(event.target.value)}

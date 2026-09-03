@@ -28,11 +28,12 @@ karino/
 ### 📋 Task Management
 
 - Create, edit, delete, search, filter, sort, and paginate tasks
+- Filter by status, priority, and overdue state; sorting by due date keeps tasks without a deadline last
 - Review and update tasks through responsive cards on mobile and tablet, with a structured table on wide screens
 - Track `todo`, `in-progress`, and `done` statuses
 - Assign low, medium, or high priority
 - Set deadlines, identify overdue work, and review recently updated tasks
-- Use a focused Today dashboard with progress, priorities, and upcoming work
+- Use a focused Today dashboard with overall completion, priorities, overdue work, and a seven-day upcoming schedule
 
 ### 🎨 Workspace Experience
 

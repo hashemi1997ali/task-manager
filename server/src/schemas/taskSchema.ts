@@ -24,9 +24,17 @@ const optionalSearchSchema = z.preprocess(
   z.string().trim().max(100).optional(),
 );
 
+const optionalBooleanQuerySchema = z
+  .preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.enum(["true", "false"]).optional(),
+  )
+  .transform((value) => (value === undefined ? undefined : value === "true"));
+
 export const taskQuerySchema = z.object({
   status: z.enum(TASK_STATUSES).optional(),
   priority: z.enum(TASK_PRIORITIES).optional(),
+  overdue: optionalBooleanQuerySchema,
   search: optionalSearchSchema,
   dueBefore: optionalQueryDateSchema,
   dueAfter: optionalQueryDateSchema,

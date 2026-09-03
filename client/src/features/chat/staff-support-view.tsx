@@ -146,6 +146,18 @@ const copy = {
   },
 } as const;
 
+const getSupportStatusLabel = (
+  status: SupportChat["status"],
+  t: (typeof copy)["en"] | (typeof copy)["de"],
+): string =>
+  status === "assistant"
+    ? t.assistantStatus
+    : status === "open"
+      ? t.waiting
+      : status === "active"
+        ? t.active
+        : t.endedStatus;
+
 const getChatUser = (
   chat: SupportChat | null,
 ): Pick<
@@ -338,14 +350,7 @@ export function StaffSupportView() {
               <div className="min-h-0 flex-1 overflow-y-auto">
                 {chats.map((chat) => {
                   const owner = typeof chat.user === "string" ? null : chat.user;
-                  const statusText =
-                    chat.status === "assistant"
-                      ? t.assistantStatus
-                      : chat.status === "open"
-                        ? t.waiting
-                        : chat.status === "active"
-                          ? t.active
-                          : t.endedStatus;
+                  const statusText = getSupportStatusLabel(chat.status, t);
                   const ownerRole = owner?.roles.includes("super_admin")
                     ? "super_admin"
                     : owner?.roles.includes("admin")
@@ -376,7 +381,10 @@ export function StaffSupportView() {
                         </ChatStatusBadge>
                       }
                       bottomBadge={
-                        <UserTypeBadge type={ownerRole}>
+                        <UserTypeBadge
+                          type={ownerRole}
+                          className="border-[var(--border)] bg-[var(--surface-muted)] text-[var(--muted)] dark:border-[var(--border)] dark:bg-[var(--surface-muted)] dark:text-[var(--muted)]"
+                        >
                           {t.historyRole[ownerRole]}
                         </UserTypeBadge>
                       }
@@ -455,17 +463,24 @@ export function StaffSupportView() {
                     subtitle={chatUser?.email ?? selected.guest?.email ?? undefined}
                     meta={
                       <>
-                        <UserTypeBadge type={selectedUserType}>
+                        <UserTypeBadge
+                          type={selectedUserType}
+                          className="border-[var(--border)] bg-[var(--surface-muted)] text-[var(--muted)] dark:border-[var(--border)] dark:bg-[var(--surface-muted)] dark:text-[var(--muted)]"
+                        >
                           {t.historyRole[selectedUserType]}
                         </UserTypeBadge>
-                        <ChatStatusBadge status={selected.status}>
-                          {selected.status === "ended"
-                            ? t.endedStatus
-                            : selected.status === "assistant"
-                              ? t.assistantStatus
-                              : selected.status === "active"
-                                ? t.active
-                                : t.waiting}
+                        <ChatStatusBadge
+                          status={selected.status}
+                          className={cn(
+                            "max-w-[10rem] truncate",
+                            selected.requiresSuperAdmin
+                              ? "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-400/25 dark:bg-violet-500/15 dark:text-violet-300"
+                              : null,
+                          )}
+                        >
+                          {selected.requiresSuperAdmin
+                            ? `${t.superQueue} · ${getSupportStatusLabel(selected.status, t)}`
+                            : getSupportStatusLabel(selected.status, t)}
                         </ChatStatusBadge>
                       </>
                     }
@@ -520,7 +535,7 @@ export function StaffSupportView() {
                     />
                   </div>
 
-                  <footer className="shrink-0 bg-[var(--surface)] p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                  <footer className="chat-composer-footer shrink-0 p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap gap-2">
                         <Button

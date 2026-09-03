@@ -126,6 +126,11 @@ const statusLabel = (
 
 export function ChatWidget() {
   const pathname = usePathname();
+  const isDedicatedChatWorkspace = [
+    "/assistant",
+    "/admin/support",
+    "/admin/contact",
+  ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
   const { locale, intlLocale } = usePreferences();
   const t = copy[locale];
   const { status, isAdmin } = useAuth();
@@ -403,7 +408,7 @@ export function ChatWidget() {
 
   return (
     <>
-      {!open && (
+      {!isDedicatedChatWorkspace && !open && (
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -418,7 +423,7 @@ export function ChatWidget() {
         </button>
       )}
 
-      {open && (
+      {!isDedicatedChatWorkspace && open && (
         <section className="chat-panel chat-workspace surface-shadow fixed z-40 flex min-h-0 flex-col overflow-hidden rounded-[var(--container-radius)]">
           <header className="chat-section-header flex h-16 shrink-0 items-center gap-3 px-3 text-[var(--foreground)]">
             <span

@@ -73,6 +73,8 @@ export interface TodayDashboard {
     tasksToday: number;
     completed: number;
     overdue: number;
+    totalTasks: number;
+    totalCompleted: number;
     completionRate: number;
   };
   focusTasks: Task[];

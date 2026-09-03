@@ -1,7 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Filter, Plus, Search } from "lucide-react";
+import {
+  ArrowDownUp,
+  CalendarClock,
+  CircleDot,
+  Flag,
+  Plus,
+  RotateCcw,
+  Search,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -25,7 +33,7 @@ import { TaskForm } from "@/features/tasks/task-form";
 import { TaskTable } from "@/features/tasks/task-table";
 import { getErrorMessage } from "@/lib/api-error";
 import type { Task, TaskPriority, TaskStatus } from "@/lib/types";
-import { formatNumber, getId } from "@/lib/utils";
+import { cn, formatNumber, getId } from "@/lib/utils";
 import { usePreferences } from "@/providers/preferences-provider";
 
 const copy = {
@@ -45,6 +53,9 @@ const copy = {
     done: "Done",
     priorityFilter: "Filter by priority",
     allPriorities: "All priorities",
+    dueDateFilter: "Filter by due date",
+    allDueDates: "All due dates",
+    overdue: "Overdue",
     low: "Low",
     medium: "Medium",
     high: "High",
@@ -101,6 +112,9 @@ const copy = {
     done: "Erledigt",
     priorityFilter: "Nach Priorität filtern",
     allPriorities: "Alle Prioritäten",
+    dueDateFilter: "Nach Fälligkeit filtern",
+    allDueDates: "Alle Fälligkeiten",
+    overdue: "Überfällig",
     low: "Niedrig",
     medium: "Mittel",
     high: "Hoch",
@@ -150,10 +164,17 @@ export function TasksView({ admin = false }: { admin?: boolean }) {
   const searchParams = useSearchParams();
   const { locale, intlLocale } = usePreferences();
   const t = copy[locale];
+  const filterFieldClass =
+    "border-[color-mix(in_srgb,var(--border)_62%,transparent)] px-3 py-1.5 transition-colors focus-within:text-[var(--foreground)]";
+  const filterLabelClass =
+    "flex items-center gap-1.5 text-[10px] font-extrabold tracking-[0.1em] text-[var(--muted)] uppercase";
+  const filterSelectClass =
+    "h-7 min-w-0 rounded-none border-0 bg-transparent px-0 shadow-none";
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState<TaskStatus | "">("");
   const [priority, setPriority] = useState<TaskPriority | "">("");
+  const [overdue, setOverdue] = useState(false);
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState<NonNullable<TaskFilters["sortBy"]>>("createdAt");
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -175,11 +196,12 @@ export function TasksView({ admin = false }: { admin?: boolean }) {
       search: debouncedSearch,
       status,
       priority,
+      overdue,
       sortBy,
       order: sortBy === "dueDate" || sortBy === "title" ? "asc" : "desc",
       ownerId: admin ? (searchParams.get("ownerId") ?? undefined) : undefined,
     }),
-    [page, debouncedSearch, status, priority, sortBy, admin, searchParams],
+    [page, debouncedSearch, status, priority, overdue, sortBy, admin, searchParams],
   );
   const queryKey = admin ? ["admin", "tasks", filters] : ["tasks", "mine", filters];
   const tasksQuery = useQuery({
@@ -236,7 +258,7 @@ export function TasksView({ admin = false }: { admin?: boolean }) {
   const pagination = tasksQuery.data?.pagination;
   const queryRequestsCreate = !admin && searchParams.get("new") === "1";
   const modalOpen = creating || queryRequestsCreate || Boolean(editingTask);
-  const hasFilters = Boolean(debouncedSearch || status || priority);
+  const hasFilters = Boolean(debouncedSearch || status || priority || overdue);
   const renderTaskCard = (task: Task, showUpdatedAt = false) => (
     <TaskCard
       key={getId(task)}
@@ -253,6 +275,7 @@ export function TasksView({ admin = false }: { admin?: boolean }) {
         getId(statusMutation.variables.task) === getId(task),
       )}
       compact
+      flat
     />
   );
 
@@ -263,69 +286,112 @@ export function TasksView({ admin = false }: { admin?: boolean }) {
         description={admin ? t.adminDescription : t.userDescription}
       />
 
-      <section className="glass-panel mt-7 grid gap-3 rounded-[var(--container-radius)] p-3 sm:grid-cols-2 xl:grid-cols-[minmax(12rem,1fr)_9rem_9rem_9rem_auto]">
-        <label className="relative min-w-0 sm:col-span-2 xl:col-span-1">
+      <section className="glass-panel mt-7 grid gap-3 rounded-[var(--container-radius)] p-3">
+        <label className="relative min-w-0">
           <Search className="pointer-events-none absolute left-4 top-4 size-4 text-slate-400" />
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t.searchPlaceholder}
-            className="pl-10"
+            className="h-12 rounded-xl border-transparent bg-[var(--surface-muted)] pl-10 shadow-none"
             aria-label={t.searchLabel}
           />
         </label>
-        <Select
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value as TaskStatus | "");
-            setPage(1);
-          }}
-          aria-label={t.statusFilter}
-        >
-          <option value="">{t.allStatuses}</option>
-          <option value="todo">{t.todo}</option>
-          <option value="in-progress">{t.inProgress}</option>
-          <option value="done">{t.done}</option>
-        </Select>
-        <Select
-          value={sortBy}
-          onChange={(event) => {
-            setSortBy(event.target.value as NonNullable<TaskFilters["sortBy"]>);
-            setPage(1);
-          }}
-          aria-label={t.sort}
-        >
-          <option value="createdAt">{t.newest}</option>
-          <option value="updatedAt">{t.recentlyUpdated}</option>
-          <option value="dueDate">{t.dueSoon}</option>
-          <option value="title">{t.titleSort}</option>
-        </Select>
-        <Select
-          value={priority}
-          onChange={(event) => {
-            setPriority(event.target.value as TaskPriority | "");
-            setPage(1);
-          }}
-          aria-label={t.priorityFilter}
-        >
-          <option value="">{t.allPriorities}</option>
-          <option value="low">{t.low}</option>
-          <option value="medium">{t.medium}</option>
-          <option value="high">{t.high}</option>
-        </Select>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setSearch("");
-            setDebouncedSearch("");
-            setStatus("");
-            setPriority("");
-            setPage(1);
-          }}
-          aria-label={t.clearFilters}
-        >
-          <Filter className="size-4" /> {t.clearFilters}
-        </Button>
+        <div className="grid grid-cols-2 gap-0 rounded-xl bg-[var(--surface-muted)] p-1 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
+          <label
+            className={cn("min-w-0 border-r border-b xl:border-b-0", filterFieldClass)}
+          >
+            <span className={filterLabelClass}>
+              <CircleDot className="size-3" aria-hidden="true" /> {t.statusLabel}
+            </span>
+            <Select
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as TaskStatus | "");
+                setPage(1);
+              }}
+              className={filterSelectClass}
+              aria-label={t.statusFilter}
+            >
+              <option value="">{t.allStatuses}</option>
+              <option value="todo">{t.todo}</option>
+              <option value="in-progress">{t.inProgress}</option>
+              <option value="done">{t.done}</option>
+            </Select>
+          </label>
+          <label
+            className={cn("min-w-0 border-b xl:border-r xl:border-b-0", filterFieldClass)}
+          >
+            <span className={filterLabelClass}>
+              <ArrowDownUp className="size-3" aria-hidden="true" /> {t.sort}
+            </span>
+            <Select
+              value={sortBy}
+              onChange={(event) => {
+                setSortBy(event.target.value as NonNullable<TaskFilters["sortBy"]>);
+                setPage(1);
+              }}
+              className={filterSelectClass}
+              aria-label={t.sort}
+            >
+              <option value="createdAt">{t.newest}</option>
+              <option value="updatedAt">{t.recentlyUpdated}</option>
+              <option value="dueDate">{t.dueSoon}</option>
+              <option value="title">{t.titleSort}</option>
+            </Select>
+          </label>
+          <label className={cn("min-w-0 border-r", filterFieldClass)}>
+            <span className={filterLabelClass}>
+              <Flag className="size-3" aria-hidden="true" /> {t.priorityLabel}
+            </span>
+            <Select
+              value={priority}
+              onChange={(event) => {
+                setPriority(event.target.value as TaskPriority | "");
+                setPage(1);
+              }}
+              className={filterSelectClass}
+              aria-label={t.priorityFilter}
+            >
+              <option value="">{t.allPriorities}</option>
+              <option value="low">{t.low}</option>
+              <option value="medium">{t.medium}</option>
+              <option value="high">{t.high}</option>
+            </Select>
+          </label>
+          <label className={cn("min-w-0 xl:border-r", filterFieldClass)}>
+            <span className={filterLabelClass}>
+              <CalendarClock className="size-3" aria-hidden="true" /> {t.dueLabel}
+            </span>
+            <Select
+              value={overdue ? "overdue" : ""}
+              onChange={(event) => {
+                setOverdue(event.target.value === "overdue");
+                setPage(1);
+              }}
+              className={filterSelectClass}
+              aria-label={t.dueDateFilter}
+            >
+              <option value="">{t.allDueDates}</option>
+              <option value="overdue">{t.overdue}</option>
+            </Select>
+          </label>
+          <Button
+            variant="ghost"
+            className="col-span-2 h-auto self-stretch rounded-lg border-t border-[color-mix(in_srgb,var(--border)_62%,transparent)] bg-transparent px-4 py-3 shadow-none xl:col-span-1 xl:border-t-0 xl:py-0"
+            onClick={() => {
+              setSearch("");
+              setDebouncedSearch("");
+              setStatus("");
+              setPriority("");
+              setOverdue(false);
+              setPage(1);
+            }}
+            aria-label={t.clearFilters}
+          >
+            <RotateCcw className="size-4" /> {t.clearFilters}
+          </Button>
+        </div>
       </section>
 
       <div className="mt-6">
@@ -356,13 +422,14 @@ export function TasksView({ admin = false }: { admin?: boolean }) {
           />
         ) : (
           <>
-            <div className="grid items-start gap-4 lg:grid-cols-2 xl:hidden">
+            <div className="overflow-hidden rounded-[var(--container-radius)] border border-[color-mix(in_srgb,var(--border)_82%,transparent)] bg-[var(--surface)] [&>*+*]:border-t [&>*+*]:border-[color-mix(in_srgb,var(--border)_54%,transparent)] lg:grid lg:grid-cols-2 lg:[&>*+*]:border-t-0 lg:[&>*]:border-b lg:[&>*]:border-[color-mix(in_srgb,var(--border)_54%,transparent)] lg:[&>*:nth-child(odd)]:border-r xl:hidden">
               {tasks.map((task) => renderTaskCard(task, true))}
             </div>
             <TaskTable
               tasks={tasks}
               referenceTime={tasksQuery.dataUpdatedAt}
               showOwner={admin}
+              polished
               onEdit={setEditingTask}
               onDelete={setDeletingTask}
               onStatusChange={(task, nextStatus) =>

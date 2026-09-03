@@ -43,14 +43,18 @@ export function ChatMessageBubble({
   return (
     <div
       id={id}
-      className={cn("flex", direction === "outgoing" ? "justify-end" : "justify-start")}
+      className={cn(
+        "flex min-w-0",
+        direction === "outgoing" ? "justify-end" : "justify-start",
+      )}
     >
       <div
         className={cn(
-          "w-fit max-w-[88%] px-4 py-3 text-sm leading-6",
+          "min-w-0 w-fit px-4 py-3 text-sm leading-6",
+          markdown ? "max-w-[96%] sm:max-w-[92%]" : "max-w-[88%]",
           direction === "outgoing"
-            ? "rounded-[1.25rem] rounded-br-md bg-[var(--foreground)] text-[var(--background)] shadow-[0_10px_26px_rgb(12_12_22_/_0.12)]"
-            : "rounded-[1.25rem] rounded-bl-md border bg-[var(--surface)] text-[var(--foreground)] shadow-[0_8px_24px_rgb(34_28_76_/_0.05)]",
+            ? "rounded-[1.25rem] rounded-br-md bg-[var(--foreground)] text-[var(--background)]"
+            : "rounded-[1.25rem] rounded-bl-md border border-[color-mix(in_srgb,var(--border)_72%,transparent)] bg-[var(--surface)] text-[var(--foreground)]",
         )}
       >
         {name &&
@@ -83,6 +87,11 @@ export function ChatMessageBubble({
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
+                table: ({ children }) => (
+                  <div className="chat-markdown-table">
+                    <table>{children}</table>
+                  </div>
+                ),
                 a: ({ href, children }) => {
                   const external = href?.startsWith("http");
                   return (

@@ -26,6 +26,17 @@ export const formatDateTime = (
   locale = "en-US",
 ): string => formatDate(value, locale, { dateStyle: "medium", timeStyle: "short" });
 
+export const formatTime = (
+  value: string | Date | null | undefined,
+  locale = "en-US",
+): string => {
+  if (!value) return "—";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(date);
+};
+
 export const formatNumber = (value: number, locale = "en-US"): string =>
   new Intl.NumberFormat(locale).format(value);
 

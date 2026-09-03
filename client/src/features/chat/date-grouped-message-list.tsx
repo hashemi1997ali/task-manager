@@ -44,7 +44,7 @@ export function DateGroupedMessageList<T extends DatedItem>({
           >
             <time
               dateTime={group[0].createdAt}
-              className="block w-full rounded-full border bg-[var(--surface)] px-3 py-1 text-center text-xs font-bold text-[var(--muted)] shadow-sm"
+              className="block w-full rounded-full border border-[color-mix(in_srgb,var(--border)_72%,transparent)] bg-[var(--surface)] px-3 py-1 text-center text-xs font-semibold text-[var(--muted)]"
             >
               {formatDate(group[0].createdAt)}
             </time>

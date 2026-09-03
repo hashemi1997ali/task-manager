@@ -16,9 +16,11 @@ export interface AdminUserDetail {
 
 export interface AdminOverview {
   totalUsers: number;
-  activeUsers: number;
   totalTasks: number;
   openTasks: number;
+  completedTasks: number;
+  completedToday: number;
+  completionRate: number;
   overdueTasks: number;
   waitingSupport: number;
   unansweredContacts: number;

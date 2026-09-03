@@ -14,6 +14,7 @@ export interface TaskFilters {
   search?: string;
   status?: TaskStatus | "";
   priority?: TaskPriority | "";
+  overdue?: boolean;
   sortBy?: "createdAt" | "updatedAt" | "dueDate" | "title" | "status";
   order?: "asc" | "desc";
   ownerId?: string;
@@ -39,6 +40,7 @@ const toQuery = (filters: TaskFilters): string => {
   if (filters.search) query.set("search", filters.search);
   if (filters.status) query.set("status", filters.status);
   if (filters.priority) query.set("priority", filters.priority);
+  if (filters.overdue) query.set("overdue", "true");
   if (filters.sortBy) query.set("sortBy", filters.sortBy);
   if (filters.order) query.set("order", filters.order);
   if (filters.ownerId) query.set("ownerId", filters.ownerId);
